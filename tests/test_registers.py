@@ -3,7 +3,6 @@
 import pytest
 
 from custom_components.kstar_lan.registers import (
-    REGISTER_DEFINITIONS,
     SENSOR_BY_KEY,
     SENSORS,
     RegisterSensor,
@@ -38,9 +37,9 @@ def test_invalid_words(words):
 
 
 def test_conservative_map():
-    assert {s.key for s in REGISTER_DEFINITIONS if s.verified} == {"battery_soc", "model_code"}
+    assert {s.key for s in SENSORS if s.verified} == {"battery_soc"}
     assert all(s.count <= 16 for s in SENSORS)
-    assert len(REGISTER_DEFINITIONS) == len(SENSOR_BY_KEY)
+    assert len(SENSORS) == len(SENSOR_BY_KEY)
     assert all(set(s.words) == set(range(s.address, s.address + s.count)) for s in SENSORS)
     assert "ac_pv" not in SENSOR_BY_KEY
     assert "grid_total_power" not in SENSOR_BY_KEY
@@ -49,7 +48,6 @@ def test_conservative_map():
 def test_known_addresses_and_reference_only_measurements():
     # The two wire addresses have device evidence; other addresses do not.
     assert SENSOR_BY_KEY["battery_soc"].words == (3066,)
-    assert SENSOR_BY_KEY["model_code"].words == (3045,)
     assert "house_power" not in SENSOR_BY_KEY
     for sensor in SENSORS:
         if sensor.key not in {"battery_soc", "model_code"}:

@@ -20,7 +20,9 @@ async def test_real_entry_and_sensor_platform(hass):
     hass.config_entries = config_entries.ConfigEntries(hass, {})
     await hass.config_entries.async_initialize()
     client = Mock()
-    client.read = AsyncMock(side_effect=lambda address, count=1: [530] if address == 3066 else [40])
+    client.read = AsyncMock(
+        side_effect=lambda address, count=1: [530] if address == 3066 else [40] * count
+    )
     with (
         patch("custom_components.kstar_lan.KstarClient", return_value=client),
         patch("custom_components.kstar_lan.config_flow.KstarClient", return_value=client),
@@ -53,8 +55,12 @@ async def test_real_entry_and_sensor_platform(hass):
     assert entry.state is config_entries.ConfigEntryState.LOADED
     entities = er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
     assert len(entities) == 19
+    assert all(
+        not any(tag in (entity.original_name or "") for tag in ("unverified", "assumed"))
+        for entity in entities
+    )
     assert all(entity.entity_id.startswith("sensor.kstar_lan_") for entity in entities)
-    assert sum(entity.disabled_by is None for entity in entities) == 4
+    assert sum(entity.disabled_by is None for entity in entities) == 19
     assert len({entity.device_id for entity in entities}) == 1
     devices = dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)
     assert len(devices) == 1

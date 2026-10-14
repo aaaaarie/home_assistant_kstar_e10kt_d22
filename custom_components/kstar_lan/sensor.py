@@ -28,8 +28,7 @@ class KstarSensor(CoordinatorEntity[KstarCoordinator], SensorEntity):
         # Suggest a stable Recorder-filterable ID; HA retains registry overrides.
         self.entity_id = f"sensor.{DOMAIN}_{definition.key}"
         self._attr_unique_id = f"{coordinator.entry.unique_id}_{definition.key}"
-        label = "assumed" if definition.assumed else "unverified"
-        self._attr_name = definition.name if definition.verified else f"{definition.name} ({label})"
+        self._attr_name = definition.name
         self._attr_native_unit_of_measurement = definition.unit
         self._attr_device_class = definition.device_class
         self._attr_state_class = definition.state_class
@@ -40,7 +39,7 @@ class KstarSensor(CoordinatorEntity[KstarCoordinator], SensorEntity):
             identifiers={(DOMAIN, coordinator.entry.unique_id)},
             name="KSTAR inverter / battery",
             manufacturer="KSTAR",
-            model="BlueSpark E10KT-D22 (user supplied)",
+            model="BlueSpark E10KT-D22",
         )
         self._attr_extra_state_attributes = {
             "register_addresses": list(definition.words),
@@ -49,9 +48,6 @@ class KstarSensor(CoordinatorEntity[KstarCoordinator], SensorEntity):
             "provenance": definition.provenance,
             "signed": definition.signed,
             "power_component": definition.power_component,
-            "verification": "device_verified"
-            if definition.verified
-            else ("assumed" if definition.assumed else "reference_only"),
         }
 
     @property
@@ -69,5 +65,4 @@ class KstarSensor(CoordinatorEntity[KstarCoordinator], SensorEntity):
             mask = int(self.native_value)
             attributes["raw_hex"] = f"0x{mask:08X}"
             attributes["active_bits"] = [bit for bit in range(32) if mask & (1 << bit)]
-            attributes["severity_mapping"] = "unverified"
         return attributes

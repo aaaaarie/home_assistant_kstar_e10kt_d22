@@ -15,10 +15,11 @@ Recorder while testing. Live values still work, but save screenshots/notes becau
 HA is not retaining the comparison history. Do not add provisional counters to the
 Energy dashboard or feed them into energy helpers yet.
 
-Enable all 15 optional overview entities on the KSTAR device, including disabled
-entities. Leave deferred electrical/phase/model entities alone. All 19 enabled
-entities share at most 17 bounded requests each 60-second interval. Existing user
-names/IDs may differ; check Recorder exclusions still cover them.
+The focused validation build enables all 19 overview entities automatically.
+Previously integration-disabled candidates are enabled on entry setup; explicit
+user disables remain in place. Out-of-scope registrations are removed automatically. All readings share
+at most 17 bounded requests each 60-second interval. Check Recorder exclusions
+still cover any manually renamed IDs.
 
 ## Full overview and what to compare
 
@@ -31,7 +32,7 @@ All listed KSTAR entity IDs start with `sensor.kstar_lan_`; suffixes are below.
 | Battery charging power | Assumed; `battery_charging_power` | Positive magnitude during app-confirmed charging, otherwise zero |
 | Battery discharging power | Discharge matched; `battery_discharging_power` | Positive magnitude during discharge, otherwise zero; both components share one raw sample |
 | Charged/discharged battery energy | Candidates; `battery_total_charge`, `battery_total_discharge` | Compare app lifetime counters and changes from morning to evening; note units and rounding |
-| Grid import/export W and kWh | Existing P1 device; KSTAR duplicates deferred | Capture P1 readings and units as context, including direction; this validates the grid source separately |
+| Grid import/export W and kWh | Existing P1 device; no duplicate KSTAR grid sensors | Capture P1 readings and units as context, including direction; this validates the grid source separately |
 | Whole-house consumption W | Candidate phase sum; no aggregate entity yet | Capture app consumption; mapping work remains before HA comparison |
 | House/load consumed energy | Candidate; `house_energy` | Compare same-scope app lifetime total and changes, not daily/monthly values |
 | AC_PV W | Needed, address unresolved; no entity | Capture app AC_PV at each interval, especially daylight; these observations alone do not identify a register |

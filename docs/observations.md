@@ -54,3 +54,11 @@ Signed power at 3065 is treated as positive discharge / negative charge, with
 separate nonnegative components. All three power entities are enabled by default
 and labeled assumed. No negative charging sample has been observed yet. Their
 verification flags remain false. The components share a single raw read per poll.
+
+
+## Validation UI simplification
+
+At the user's request, the trial now enables all 19 wanted overview sensors and
+uses plain names in HA. Obsolete registrations and out-of-scope definitions are
+removed. The earlier labels do not reflect the current UI; evidence status is
+maintained in the overview table. This UI change does not add measurement evidence.

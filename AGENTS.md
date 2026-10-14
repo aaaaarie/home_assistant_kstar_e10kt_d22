@@ -8,9 +8,11 @@
 # Implementation pitfalls
 
 - Keep one shared async client/coordinator; reads are bounded to 16 words.
-- `REGISTER_DEFINITIONS` retains references; only `SENSORS` creates entities/polls.
-  Disabled/deferred measurements must not be polled.
-- Preserve entity keys, registry history and the `sensor.kstar_lan_` ID prefix.
+- Keep only wanted overview definitions in `SENSORS`; no hidden/out-of-scope entities.
+  Enable the overview by default. Remove obsolete registrations on setup.
+- This is a single-user validation build, not production. Use plain HA names;
+  keep verification status in `docs/overview.md`, not names/state attributes.
+- Keep the `sensor.kstar_lan_` prefix so the Recorder exclusion covers the overview.
 - Addresses are zero-based. Our `words` tuples are high-word first; Solarman lists
   multiword addresses low-word first. Registers 3100 and 3144 are phase values.
 - HA must serialize displayed form schemas. Custom validators previously caused a

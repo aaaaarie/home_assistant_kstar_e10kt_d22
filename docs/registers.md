@@ -33,7 +33,7 @@ Next evidence needed: a KSTAR-issued telemetry map for the installed D22 firmwar
 
 Enable a small set of entities, download diagnostics and record firmware, raw words, time and simultaneous reference readings. For battery and grid power, verify both directions and near-zero readings; positive discharge at 3065 has an app comparison; negative charge is now provisionally assumed at the user's request. Other power directions are unverified. For energy totals, verify high/low words, units, changes across a known energy transfer and reset behavior. Zero-valued high words alone cannot establish a 32-bit interpretation. Code sensors retain numeric values because the older status lookup may not describe D22 firmware accurately.
 
-The implementation applies only broad sanity bounds to SoC and temperatures. A plausible value does not validate a mapping. Reference-only measurements remain visibly unverified and disabled by default, except the battery power entities explicitly enabled provisionally and labeled assumed.
+The implementation applies only broad sanity bounds to SoC and temperatures. A plausible value does not validate a mapping. Evidence status stays in the overview table; HA names and attributes do not mark verification. All wanted sensors are enabled for validation.
 
 ## D22 alarm manual evidence
 
@@ -43,64 +43,31 @@ descriptions do not independently establish every LAN register binding.
 
 ## Reference inventory and current scope
 
-The full map is retained as `REGISTER_DEFINITIONS`; only the **19** measurements
-selected by `OVERVIEW_SENSOR_KEYS` are exposed in HA. See [overview table](overview.md)
-for priorities. SoC and the three provisional power entities are enabled by default.
-Model-code readability remains verified but its entity is deferred.
+Only the 19 overview definitions remain in code. Model-code readability is still
+checked during configuration, without creating a model-code entity. All overview
+entities are enabled for validation; enabling does not establish register correctness.
 
 Words are listed high first; wire requests use ascending addresses. All use FC04.
 Multiword interpretations and alarm bit meanings still need D22 verification.
 
-| Key | Words (high first) | Decode | Unit | HA scope |
-| --- | --- | --- | --- | --- |
-| `battery_soc` | 3066 | U16 ×0.1 | % | Overview |
-| `model_code` | 3045 | U16 ×1 | — | Deferred |
-| `battery_voltage` | 3063 | U16 ×0.01 | V | Deferred |
-| `battery_current` | 3064 | S16 ×0.1 | A | Deferred |
-| `battery_power` | 3065 | S16 ×1 | W | Overview |
-| `battery_charging_power` | 3065 | charging component of signed W | W | Overview |
-| `battery_discharging_power` | 3065 | discharging component of signed W | W | Overview |
-| `battery_temperature` | 3067 | S16 ×0.1 | °C | Overview |
-| `battery_total_discharge` | 3292, 3293 | U32 ×1 | kWh | Overview |
-| `battery_total_charge` | 3299, 3300 | U32 ×1 | kWh | Overview |
-| `grid_import_energy` | 3114, 3115 | U32 ×0.1 | kWh | Deferred |
-| `grid_export_energy` | 3121, 3122 | U32 ×0.1 | kWh | Deferred |
-| `load_r_power` | 3144 | U16 ×1 | W | Deferred |
-| `house_energy` | 3152, 3153 | U32 ×0.1 | kWh | Overview |
-| `grid_r_voltage` | 3097 | U16 ×0.1 | V | Deferred |
-| `grid_r_frequency` | 3098 | U16 ×0.01 | Hz | Deferred |
-| `grid_r_current` | 3099 | S16 ×0.001 | A | Deferred |
-| `grid_r_power` | 3100 | S16 ×1 | W | Deferred |
-| `inverter_r_voltage` | 3123 | U16 ×0.1 | V | Deferred |
-| `inverter_r_current` | 3124 | S16 ×0.01 | A | Deferred |
-| `inverter_r_frequency` | 3125 | U16 ×0.01 | Hz | Deferred |
-| `inverter_r_power` | 3126 | S16 ×1 | W | Deferred |
-| `inverter_temperature` | 3055 | S16 ×0.1 | °C | Overview |
-| `battery_radiator_temperature` | 3056 | S16 ×0.1 | °C | Overview |
-| `chassis_temperature` | 3057 | S16 ×0.1 | °C | Overview |
-| `system_status` | 3046 | U16 ×1 | — | Overview |
-| `inverter_status` | 3047 | U16 ×1 | — | Overview |
-| `dcdc_status` | 3048 | U16 ×1 | — | Overview |
-| `pv1_power` | 3024 | S16 ×1 | W | Overview |
-| `pv2_power` | 3025 | S16 ×1 | W | Overview |
-| `grid_s_voltage` | 3101 | U16 ×0.1 | V | Deferred |
-| `grid_s_frequency` | 3102 | U16 ×0.01 | Hz | Deferred |
-| `grid_s_current` | 3103 | S16 ×0.001 | A | Deferred |
-| `grid_s_power` | 3104 | S16 ×1 | W | Deferred |
-| `inverter_s_voltage` | 3127 | U16 ×0.1 | V | Deferred |
-| `inverter_s_current` | 3128 | S16 ×0.01 | A | Deferred |
-| `inverter_s_frequency` | 3129 | U16 ×0.01 | Hz | Deferred |
-| `inverter_s_power` | 3130 | S16 ×1 | W | Deferred |
-| `load_s_power` | 3145 | U16 ×1 | W | Deferred |
-| `grid_t_voltage` | 3105 | U16 ×0.1 | V | Deferred |
-| `grid_t_frequency` | 3106 | U16 ×0.01 | Hz | Deferred |
-| `grid_t_current` | 3107 | S16 ×0.001 | A | Deferred |
-| `grid_t_power` | 3108 | S16 ×1 | W | Deferred |
-| `inverter_t_voltage` | 3131 | U16 ×0.1 | V | Deferred |
-| `inverter_t_current` | 3132 | S16 ×0.01 | A | Deferred |
-| `inverter_t_frequency` | 3133 | U16 ×0.01 | Hz | Deferred |
-| `inverter_t_power` | 3134 | S16 ×1 | W | Deferred |
-| `load_t_power` | 3146 | U16 ×1 | W | Deferred |
-| `pv_total_energy` | 3041, 3042 | U32 ×0.1 | kWh | Overview |
-| `alarm_flags` | 3049, 3050 | U32 ×1 | — | Overview |
-| `fault_flags` | 3051, 3052 | U32 ×1 | — | Overview |
+| Key | Words (high first) | Decode | Unit |
+| --- | --- | --- | --- |
+| `battery_soc` | 3066 | U16 ×0.1 | % |
+| `battery_power` | 3065 | S16 ×1 | W |
+| `battery_charging_power` | 3065 | charging component of signed W | W |
+| `battery_discharging_power` | 3065 | discharging component of signed W | W |
+| `battery_temperature` | 3067 | S16 ×0.1 | °C |
+| `battery_total_discharge` | 3292, 3293 | U32 ×1 | kWh |
+| `battery_total_charge` | 3299, 3300 | U32 ×1 | kWh |
+| `house_energy` | 3152, 3153 | U32 ×0.1 | kWh |
+| `inverter_temperature` | 3055 | S16 ×0.1 | °C |
+| `battery_radiator_temperature` | 3056 | S16 ×0.1 | °C |
+| `chassis_temperature` | 3057 | S16 ×0.1 | °C |
+| `system_status` | 3046 | U16 ×1 | — |
+| `inverter_status` | 3047 | U16 ×1 | — |
+| `dcdc_status` | 3048 | U16 ×1 | — |
+| `pv1_power` | 3024 | S16 ×1 | W |
+| `pv2_power` | 3025 | S16 ×1 | W |
+| `pv_total_energy` | 3041, 3042 | U32 ×0.1 | kWh |
+| `alarm_flags` | 3049, 3050 | U32 ×1 | — |
+| `fault_flags` | 3051, 3052 | U32 ×1 | — |

@@ -11,12 +11,12 @@ Tested with HA Core **2026.10.0** and **PyModbus 3.13.1**.
 
 ## Current state
 
-- Four entities enabled by default: SoC, signed battery power, charging power and
-  discharging power. SoC matches Sync; charging direction remains assumed.
-- Fifteen optional candidates: energy counters, temperatures, status codes,
-  alarm/fault masks and DC PV measurements. Enable them for comparison with Sync.
+- All 19 overview entities are enabled automatically for validation. Sensors you
+  explicitly disabled yourself stay disabled.
+- SoC matches Sync. The battery-power direction remains provisional for charging;
+  the working table tracks the remaining mapping uncertainties. HA uses plain names.
 - AC_PV and whole-house power are still unresolved. Alarm coverage is incomplete.
-- Phase measurements, volts/amps and individual-pack details are deferred.
+- Phase measurements, volts/amps and individual-pack details are out of scope.
 
 The [working table](docs/overview.md) is the source of truth for scope and evidence.
 Use the [comparison checklist](docs/validation.md) for observations, and
@@ -32,12 +32,12 @@ Repository: `https://github.com/aaaaarie/home_assistant_kstar_e10kt_d22`
    host `192.168.178.238`, port `502`, unit ID `1`.
 
 After code changes: commit/push, use **HACS → KSTAR LAN → Redownload**, then restart.
-Keep the existing config entry and entity IDs to retain history.
+Keep the config entry; the update automatically removes obsolete sensor registrations.
 
-Polling defaults to **60 seconds**, adjustable through **Configure**. Enable optional
-sensors in the device's entity settings, including disabled entities. Disabled and
-deferred measurements aren't polled. On update, retired entities are disabled
-without deleting their history.
+Polling defaults to **60 seconds**, adjustable through **Configure**. All overview
+sensors are enabled for this validation build; no manual selection is needed.
+Disabled measurements aren't polled. Obsolete entities are removed from the registry,
+not left as disabled clutter.
 
 ## Recording during validation
 

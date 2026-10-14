@@ -52,9 +52,9 @@ async def test_real_entry_and_sensor_platform(hass):
         assert entry.runtime_data.update_interval.total_seconds() == 120
     assert entry.state is config_entries.ConfigEntryState.LOADED
     entities = er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
-    assert len(entities) == 48
+    assert len(entities) == 19
     assert all(entity.entity_id.startswith("sensor.kstar_lan_") for entity in entities)
-    assert sum(entity.disabled_by is None for entity in entities) == 5
+    assert sum(entity.disabled_by is None for entity in entities) == 4
     assert len({entity.device_id for entity in entities}) == 1
     devices = dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)
     assert len(devices) == 1

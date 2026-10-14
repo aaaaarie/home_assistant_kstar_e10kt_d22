@@ -7,3 +7,8 @@ __pycache__/
 dist/
 *.egg-info/
 build/
+
+# Local validation worksheets and Excel lock files
+/docs/validation-checklist.csv
+/docs/validation-checklist.xlsx
+/docs/~$*.xlsx

@@ -61,3 +61,13 @@ class KstarSensor(CoordinatorEntity[KstarCoordinator], SensorEntity):
     @property
     def native_value(self) -> int | float | None:
         return self.coordinator.data.get(self.definition.key)
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        attributes = dict(self._attr_extra_state_attributes)
+        if self.definition.bitmap and self.available:
+            mask = int(self.native_value)
+            attributes["raw_hex"] = f"0x{mask:08X}"
+            attributes["active_bits"] = [bit for bit in range(32) if mask & (1 << bit)]
+            attributes["severity_mapping"] = "unverified"
+        return attributes

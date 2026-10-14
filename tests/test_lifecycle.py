@@ -26,7 +26,7 @@ async def test_setup_unload(hass, entry):
 
 async def test_shutdown_closes_connection(hass, entry):
     client = Mock()
-    client.read = AsyncMock(side_effect=[[530], [40], [412]])
+    client.read = AsyncMock(side_effect=[[530], [412]])
     hass.config_entries = Mock(async_forward_entry_setups=AsyncMock())
     with patch("custom_components.kstar_lan.KstarClient", return_value=client):
         await async_setup_entry(hass, entry)
@@ -50,3 +50,29 @@ async def test_unload_failure_keeps_connection(hass, entry):
     hass.config_entries = Mock(async_unload_platforms=AsyncMock(return_value=False))
     assert not await async_unload_entry(hass, entry)
     client.close.assert_not_called()
+
+
+async def test_deferred_entities_disabled_without_deleting_history(hass, entry):
+    from homeassistant.helpers import entity_registry as er
+
+    hass.config_entries = Mock(async_forward_entry_setups=AsyncMock())
+    hass.config_entries.async_get_entry.return_value = entry
+    registry = er.async_get(hass)
+    voltage = registry.async_get_or_create(
+        "sensor", "kstar_lan", f"{entry.unique_id}_battery_voltage", config_entry=entry
+    )
+    user_disabled = registry.async_get_or_create(
+        "sensor",
+        "kstar_lan",
+        f"{entry.unique_id}_battery_current",
+        config_entry=entry,
+        disabled_by=er.RegistryEntryDisabler.USER,
+    )
+    client = Mock()
+    client.read = AsyncMock(side_effect=lambda address, count: [530] if address == 3066 else [412])
+    with patch("custom_components.kstar_lan.KstarClient", return_value=client):
+        await async_setup_entry(hass, entry)
+    assert registry.async_get(voltage.entity_id).disabled_by == er.RegistryEntryDisabler.INTEGRATION
+    assert registry.async_get(user_disabled.entity_id).disabled_by == er.RegistryEntryDisabler.USER
+    assert client.read.await_count == 2
+    assert registry.async_get(voltage.entity_id).unique_id == voltage.unique_id

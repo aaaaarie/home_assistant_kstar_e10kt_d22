@@ -23,8 +23,8 @@ def coordinator(hass, entry):
 async def test_default_reads_and_device(coordinator):
     coordinator.data = await coordinator._async_update_data()
     assert coordinator.data["battery_soc"] == 53
-    assert coordinator.data["model_code"] == 40
-    assert coordinator.client.read.await_count == 3
+    assert "model_code" not in coordinator.data
+    assert coordinator.client.read.await_count == 2
     soc = KstarSensor(coordinator, SENSOR_BY_KEY["battery_soc"])
     model = KstarSensor(coordinator, SENSOR_BY_KEY["model_code"])
     assert soc.available
@@ -52,7 +52,7 @@ async def test_registry_enable_backoff_and_recovery(coordinator, hass, entry):
     assert coordinator.errors["battery_power"] == "register_rejected"
     coordinator.client.read.reset_mock()
     await coordinator._async_update_data()
-    assert coordinator.client.read.await_count == 2
+    assert coordinator.client.read.await_count == 1
     coordinator._retry_at[(3065, 1)] = 0
     coordinator.client.read.side_effect = lambda address, count: (
         [65535] if address == 3065 else ([530] if address == 3066 else [40])
@@ -87,7 +87,7 @@ async def test_invalid_soc_only_unavailable(coordinator):
     await coordinator.async_refresh()
     assert coordinator.last_update_success
     assert not KstarSensor(coordinator, SENSOR_BY_KEY["battery_soc"]).available
-    assert KstarSensor(coordinator, SENSOR_BY_KEY["model_code"]).available
+    assert KstarSensor(coordinator, SENSOR_BY_KEY["battery_power"]).available
 
 
 async def test_all_rejected(coordinator):
@@ -103,3 +103,21 @@ async def test_diagnostics_redacted(coordinator, hass, entry):
     assert diagnostics["raw_input_registers"]["battery_soc"] == [530]
     coordinator.last_update_success = False
     assert not (await async_get_config_entry_diagnostics(hass, entry))["decoded_values"]
+
+
+async def test_raw_alarm_bits_and_unavailability(coordinator, hass, entry):
+    registry = er.async_get(hass)
+    registry.async_get_or_create("sensor", "kstar_lan", f"{entry.unique_id}_alarm_flags")
+    coordinator.client.read.side_effect = lambda address, count: (
+        [1, 5] if address == 3049 else ([530] if address == 3066 else [412])
+    )
+    await coordinator.async_refresh()
+    entity = KstarSensor(coordinator, SENSOR_BY_KEY["alarm_flags"])
+    assert entity.native_value == 65541
+    assert entity.extra_state_attributes["raw_hex"] == "0x00010005"
+    assert entity.extra_state_attributes["active_bits"] == [0, 2, 16]
+    assert entity.extra_state_attributes["severity_mapping"] == "unverified"
+    coordinator.client.read.side_effect = CannotConnect()
+    await coordinator.async_refresh()
+    assert not entity.available
+    assert "active_bits" not in entity.extra_state_attributes

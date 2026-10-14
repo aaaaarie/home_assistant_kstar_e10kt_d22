@@ -3,15 +3,25 @@
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT, EVENT_HOMEASSISTANT_STOP, Platform
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 
 from .const import CONF_UNIT_ID
 from .coordinator import KstarCoordinator
 from .modbus import KstarClient
+from .registers import DEFERRED_SENSORS
 
 PLATFORMS = [Platform.SENSOR]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    # Retain history/identifiers while retiring entities from earlier broad builds.
+    registry = er.async_get(hass)
+    deferred_ids = {f"{entry.unique_id}_{sensor.key}" for sensor in DEFERRED_SENSORS}
+    for record in er.async_entries_for_config_entry(registry, entry.entry_id):
+        if record.unique_id in deferred_ids and record.disabled_by is None:
+            registry.async_update_entity(
+                record.entity_id, disabled_by=er.RegistryEntryDisabler.INTEGRATION
+            )
     client = KstarClient(entry.data[CONF_HOST], entry.data[CONF_PORT], entry.data[CONF_UNIT_ID])
     coordinator = KstarCoordinator(hass, entry, client)
     try:

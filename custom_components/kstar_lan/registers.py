@@ -24,6 +24,7 @@ class RegisterSensor:
     verified: bool = False
     assumed: bool = False
     power_component: str | None = None
+    bitmap: bool = False
     minimum: float | None = None
     maximum: float | None = None
     provenance: str = "solarman_kstar_hybrid_v2.5"
@@ -374,4 +375,62 @@ for phase, grid_base, inverter_base, load_address in (
             provenance="kstar_protocol_v2.9.1",
         ),
     )
-SENSOR_BY_KEY = {sensor.key: sensor for sensor in SENSORS}
+# Full reference map is retained for bounded investigations, not HA entity creation.
+REGISTER_DEFINITIONS = SENSORS + (
+    RegisterSensor(
+        "pv_total_energy",
+        "PV generated energy",
+        (3041, 3042),
+        0.1,
+        unit="kWh",
+        device_class="energy",
+        state_class="total",
+    ),
+    RegisterSensor(
+        "alarm_flags",
+        "Alarm flags (raw)",
+        (3049, 3050),
+        state_class=None,
+        bitmap=True,
+        provenance="kstar_protocol_v2.9.1",
+    ),
+    RegisterSensor(
+        "fault_flags",
+        "Fault flags (raw)",
+        (3051, 3052),
+        state_class=None,
+        bitmap=True,
+        provenance="kstar_protocol_v2.9.1",
+    ),
+)
+SENSOR_BY_KEY = {sensor.key: sensor for sensor in REGISTER_DEFINITIONS}
+
+# Focused system overview. Deferred definitions create no entities and are not polled.
+# Preserve keys when bringing measurements back so their history remains associated.
+OVERVIEW_SENSOR_KEYS = frozenset(
+    {
+        "battery_soc",
+        "battery_power",
+        "battery_charging_power",
+        "battery_discharging_power",
+        "battery_temperature",
+        "inverter_temperature",
+        "battery_radiator_temperature",
+        "chassis_temperature",
+        "battery_total_charge",
+        "battery_total_discharge",
+        "house_energy",
+        "pv1_power",
+        "pv2_power",
+        "pv_total_energy",
+        "system_status",
+        "inverter_status",
+        "dcdc_status",
+        "alarm_flags",
+        "fault_flags",
+    }
+)
+SENSORS = tuple(sensor for sensor in REGISTER_DEFINITIONS if sensor.key in OVERVIEW_SENSOR_KEYS)
+DEFERRED_SENSORS = tuple(
+    sensor for sensor in REGISTER_DEFINITIONS if sensor.key not in OVERVIEW_SENSOR_KEYS
+)

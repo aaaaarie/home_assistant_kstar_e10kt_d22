@@ -1,0 +1,596 @@
+{
+  "app_ac_pv_w_reported_before_snapshot": 77,
+  "interpretations": "Reference only; compare with app before promotion",
+  "readings": [
+    {
+      "time": "2026-10-14T20:22:38+02:00",
+      "key": "battery_soc",
+      "address": 3066,
+      "count": 1,
+      "unit": "%",
+      "scale": 0.1,
+      "signed": false,
+      "raw_words": [
+        480
+      ],
+      "candidate_value": 48.0
+    },
+    {
+      "time": "2026-10-14T20:22:38+02:00",
+      "key": "battery_voltage",
+      "address": 3063,
+      "count": 1,
+      "unit": "V",
+      "scale": 0.01,
+      "signed": false,
+      "raw_words": [
+        5157
+      ],
+      "candidate_value": 51.57
+    },
+    {
+      "time": "2026-10-14T20:22:39+02:00",
+      "key": "battery_current",
+      "address": 3064,
+      "count": 1,
+      "unit": "A",
+      "scale": 0.1,
+      "signed": true,
+      "raw_words": [
+        80
+      ],
+      "candidate_value": 8.0
+    },
+    {
+      "time": "2026-10-14T20:22:39+02:00",
+      "key": "battery_power",
+      "address": 3065,
+      "count": 1,
+      "unit": "W",
+      "scale": 1,
+      "signed": true,
+      "raw_words": [
+        412
+      ],
+      "candidate_value": 412
+    },
+    {
+      "time": "2026-10-14T20:22:39+02:00",
+      "key": "battery_temperature",
+      "address": 3067,
+      "count": 1,
+      "unit": "\u00b0C",
+      "scale": 0.1,
+      "signed": true,
+      "raw_words": [
+        208
+      ],
+      "candidate_value": 20.8
+    },
+    {
+      "time": "2026-10-14T20:22:39+02:00",
+      "key": "battery_total_discharge",
+      "address": 3292,
+      "count": 2,
+      "unit": "kWh",
+      "scale": 1,
+      "signed": false,
+      "raw_words": [
+        0,
+        2
+      ],
+      "candidate_value": 2
+    },
+    {
+      "time": "2026-10-14T20:22:39+02:00",
+      "key": "battery_total_charge",
+      "address": 3299,
+      "count": 2,
+      "unit": "kWh",
+      "scale": 1,
+      "signed": false,
+      "raw_words": [
+        0,
+        1
+      ],
+      "candidate_value": 1
+    },
+    {
+      "time": "2026-10-14T20:22:39+02:00",
+      "key": "grid_import_energy",
+      "address": 3114,
+      "count": 2,
+      "unit": "kWh",
+      "scale": 0.1,
+      "signed": false,
+      "raw_words": [
+        0,
+        0
+      ],
+      "candidate_value": 0.0
+    },
+    {
+      "time": "2026-10-14T20:22:39+02:00",
+      "key": "grid_export_energy",
+      "address": 3121,
+      "count": 2,
+      "unit": "kWh",
+      "scale": 0.1,
+      "signed": false,
+      "raw_words": [
+        0,
+        1
+      ],
+      "candidate_value": 0.1
+    },
+    {
+      "time": "2026-10-14T20:22:40+02:00",
+      "key": "load_r_power",
+      "address": 3144,
+      "count": 1,
+      "unit": "W",
+      "scale": 1,
+      "signed": false,
+      "raw_words": [
+        155
+      ],
+      "candidate_value": 155
+    },
+    {
+      "time": "2026-10-14T20:22:40+02:00",
+      "key": "house_energy",
+      "address": 3152,
+      "count": 2,
+      "unit": "kWh",
+      "scale": 0.1,
+      "signed": false,
+      "raw_words": [
+        0,
+        27
+      ],
+      "candidate_value": 2.7
+    },
+    {
+      "time": "2026-10-14T20:22:40+02:00",
+      "key": "grid_r_voltage",
+      "address": 3097,
+      "count": 1,
+      "unit": "V",
+      "scale": 0.1,
+      "signed": false,
+      "raw_words": [
+        2370
+      ],
+      "candidate_value": 237.0
+    },
+    {
+      "time": "2026-10-14T20:22:40+02:00",
+      "key": "grid_r_frequency",
+      "address": 3098,
+      "count": 1,
+      "unit": "Hz",
+      "scale": 0.01,
+      "signed": false,
+      "raw_words": [
+        4999
+      ],
+      "candidate_value": 49.99
+    },
+    {
+      "time": "2026-10-14T20:22:40+02:00",
+      "key": "grid_r_current",
+      "address": 3099,
+      "count": 1,
+      "unit": "A",
+      "scale": 0.001,
+      "signed": true,
+      "raw_words": [
+        2840
+      ],
+      "candidate_value": 2.84
+    },
+    {
+      "time": "2026-10-14T20:22:40+02:00",
+      "key": "grid_r_power",
+      "address": 3100,
+      "count": 1,
+      "unit": "W",
+      "scale": 1,
+      "signed": true,
+      "raw_words": [
+        65390
+      ],
+      "candidate_value": -146
+    },
+    {
+      "time": "2026-10-14T20:22:40+02:00",
+      "key": "inverter_r_voltage",
+      "address": 3123,
+      "count": 1,
+      "unit": "V",
+      "scale": 0.1,
+      "signed": false,
+      "raw_words": [
+        2370
+      ],
+      "candidate_value": 237.0
+    },
+    {
+      "time": "2026-10-14T20:22:41+02:00",
+      "key": "inverter_r_current",
+      "address": 3124,
+      "count": 1,
+      "unit": "A",
+      "scale": 0.01,
+      "signed": true,
+      "raw_words": [
+        153
+      ],
+      "candidate_value": 1.53
+    },
+    {
+      "time": "2026-10-14T20:22:41+02:00",
+      "key": "inverter_r_frequency",
+      "address": 3125,
+      "count": 1,
+      "unit": "Hz",
+      "scale": 0.01,
+      "signed": false,
+      "raw_words": [
+        4999
+      ],
+      "candidate_value": 49.99
+    },
+    {
+      "time": "2026-10-14T20:22:41+02:00",
+      "key": "inverter_r_power",
+      "address": 3126,
+      "count": 1,
+      "unit": "W",
+      "scale": 1,
+      "signed": true,
+      "raw_words": [
+        161
+      ],
+      "candidate_value": 161
+    },
+    {
+      "time": "2026-10-14T20:22:41+02:00",
+      "key": "inverter_temperature",
+      "address": 3055,
+      "count": 1,
+      "unit": "\u00b0C",
+      "scale": 0.1,
+      "signed": true,
+      "raw_words": [
+        358
+      ],
+      "candidate_value": 35.8
+    },
+    {
+      "time": "2026-10-14T20:22:41+02:00",
+      "key": "battery_radiator_temperature",
+      "address": 3056,
+      "count": 1,
+      "unit": "\u00b0C",
+      "scale": 0.1,
+      "signed": true,
+      "raw_words": [
+        363
+      ],
+      "candidate_value": 36.3
+    },
+    {
+      "time": "2026-10-14T20:22:41+02:00",
+      "key": "chassis_temperature",
+      "address": 3057,
+      "count": 1,
+      "unit": "\u00b0C",
+      "scale": 0.1,
+      "signed": true,
+      "raw_words": [
+        436
+      ],
+      "candidate_value": 43.6
+    },
+    {
+      "time": "2026-10-14T20:22:42+02:00",
+      "key": "system_status",
+      "address": 3046,
+      "count": 1,
+      "unit": null,
+      "scale": 1,
+      "signed": false,
+      "raw_words": [
+        2
+      ],
+      "candidate_value": 2
+    },
+    {
+      "time": "2026-10-14T20:22:42+02:00",
+      "key": "inverter_status",
+      "address": 3047,
+      "count": 1,
+      "unit": null,
+      "scale": 1,
+      "signed": false,
+      "raw_words": [
+        2
+      ],
+      "candidate_value": 2
+    },
+    {
+      "time": "2026-10-14T20:22:42+02:00",
+      "key": "dcdc_status",
+      "address": 3048,
+      "count": 1,
+      "unit": null,
+      "scale": 1,
+      "signed": false,
+      "raw_words": [
+        3
+      ],
+      "candidate_value": 3
+    },
+    {
+      "time": "2026-10-14T20:22:42+02:00",
+      "key": "pv1_power",
+      "address": 3024,
+      "count": 1,
+      "unit": "W",
+      "scale": 1,
+      "signed": true,
+      "raw_words": [
+        0
+      ],
+      "candidate_value": 0
+    },
+    {
+      "time": "2026-10-14T20:22:42+02:00",
+      "key": "pv2_power",
+      "address": 3025,
+      "count": 1,
+      "unit": "W",
+      "scale": 1,
+      "signed": true,
+      "raw_words": [
+        0
+      ],
+      "candidate_value": 0
+    },
+    {
+      "time": "2026-10-14T20:22:42+02:00",
+      "key": "grid_s_voltage",
+      "address": 3101,
+      "count": 1,
+      "unit": "V",
+      "scale": 0.1,
+      "signed": false,
+      "raw_words": [
+        2369
+      ],
+      "candidate_value": 236.9
+    },
+    {
+      "time": "2026-10-14T20:22:42+02:00",
+      "key": "grid_s_frequency",
+      "address": 3102,
+      "count": 1,
+      "unit": "Hz",
+      "scale": 0.01,
+      "signed": false,
+      "raw_words": [
+        5000
+      ],
+      "candidate_value": 50.0
+    },
+    {
+      "time": "2026-10-14T20:22:43+02:00",
+      "key": "grid_s_current",
+      "address": 3103,
+      "count": 1,
+      "unit": "A",
+      "scale": 0.001,
+      "signed": true,
+      "raw_words": [
+        830
+      ],
+      "candidate_value": 0.83
+    },
+    {
+      "time": "2026-10-14T20:22:43+02:00",
+      "key": "grid_s_power",
+      "address": 3104,
+      "count": 1,
+      "unit": "W",
+      "scale": 1,
+      "signed": true,
+      "raw_words": [
+        78
+      ],
+      "candidate_value": 78
+    },
+    {
+      "time": "2026-10-14T20:22:43+02:00",
+      "key": "inverter_s_voltage",
+      "address": 3127,
+      "count": 1,
+      "unit": "V",
+      "scale": 0.1,
+      "signed": false,
+      "raw_words": [
+        2369
+      ],
+      "candidate_value": 236.9
+    },
+    {
+      "time": "2026-10-14T20:22:43+02:00",
+      "key": "inverter_s_current",
+      "address": 3128,
+      "count": 1,
+      "unit": "A",
+      "scale": 0.01,
+      "signed": true,
+      "raw_words": [
+        154
+      ],
+      "candidate_value": 1.54
+    },
+    {
+      "time": "2026-10-14T20:22:43+02:00",
+      "key": "inverter_s_frequency",
+      "address": 3129,
+      "count": 1,
+      "unit": "Hz",
+      "scale": 0.01,
+      "signed": false,
+      "raw_words": [
+        5000
+      ],
+      "candidate_value": 50.0
+    },
+    {
+      "time": "2026-10-14T20:22:43+02:00",
+      "key": "inverter_s_power",
+      "address": 3130,
+      "count": 1,
+      "unit": "W",
+      "scale": 1,
+      "signed": true,
+      "raw_words": [
+        155
+      ],
+      "candidate_value": 155
+    },
+    {
+      "time": "2026-10-14T20:22:44+02:00",
+      "key": "load_s_power",
+      "address": 3145,
+      "count": 1,
+      "unit": "W",
+      "scale": 1,
+      "signed": false,
+      "raw_words": [
+        156
+      ],
+      "candidate_value": 156
+    },
+    {
+      "time": "2026-10-14T20:22:44+02:00",
+      "key": "grid_t_voltage",
+      "address": 3105,
+      "count": 1,
+      "unit": "V",
+      "scale": 0.1,
+      "signed": false,
+      "raw_words": [
+        2413
+      ],
+      "candidate_value": 241.3
+    },
+    {
+      "time": "2026-10-14T20:22:44+02:00",
+      "key": "grid_t_frequency",
+      "address": 3106,
+      "count": 1,
+      "unit": "Hz",
+      "scale": 0.01,
+      "signed": false,
+      "raw_words": [
+        5000
+      ],
+      "candidate_value": 50.0
+    },
+    {
+      "time": "2026-10-14T20:22:44+02:00",
+      "key": "grid_t_current",
+      "address": 3107,
+      "count": 1,
+      "unit": "A",
+      "scale": 0.001,
+      "signed": true,
+      "raw_words": [
+        1170
+      ],
+      "candidate_value": 1.17
+    },
+    {
+      "time": "2026-10-14T20:22:44+02:00",
+      "key": "grid_t_power",
+      "address": 3108,
+      "count": 1,
+      "unit": "W",
+      "scale": 1,
+      "signed": true,
+      "raw_words": [
+        82
+      ],
+      "candidate_value": 82
+    },
+    {
+      "time": "2026-10-14T20:22:44+02:00",
+      "key": "inverter_t_voltage",
+      "address": 3131,
+      "count": 1,
+      "unit": "V",
+      "scale": 0.1,
+      "signed": false,
+      "raw_words": [
+        2413
+      ],
+      "candidate_value": 241.3
+    },
+    {
+      "time": "2026-10-14T20:22:45+02:00",
+      "key": "inverter_t_current",
+      "address": 3132,
+      "count": 1,
+      "unit": "A",
+      "scale": 0.01,
+      "signed": true,
+      "raw_words": [
+        157
+      ],
+      "candidate_value": 1.57
+    },
+    {
+      "time": "2026-10-14T20:22:45+02:00",
+      "key": "inverter_t_frequency",
+      "address": 3133,
+      "count": 1,
+      "unit": "Hz",
+      "scale": 0.01,
+      "signed": false,
+      "raw_words": [
+        5000
+      ],
+      "candidate_value": 50.0
+    },
+    {
+      "time": "2026-10-14T20:22:45+02:00",
+      "key": "inverter_t_power",
+      "address": 3134,
+      "count": 1,
+      "unit": "W",
+      "scale": 1,
+      "signed": true,
+      "raw_words": [
+        48
+      ],
+      "candidate_value": 48
+    },
+    {
+      "time": "2026-10-14T20:22:45+02:00",
+      "key": "load_t_power",
+      "address": 3146,
+      "count": 1,
+      "unit": "W",
+      "scale": 1,
+      "signed": false,
+      "raw_words": [
+        339
+      ],
+      "candidate_value": 339
+    }
+  ]
+}

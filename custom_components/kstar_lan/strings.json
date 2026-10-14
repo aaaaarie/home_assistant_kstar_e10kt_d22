@@ -1,0 +1,37 @@
+{
+  "title": "KSTAR LAN",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to KSTAR LAN",
+        "description": "Read-only direct Modbus TCP. SoC and raw model code are verified. Battery power sensors are enabled provisionally, assuming positive discharge and negative charge. Other sensors are disabled until manually enabled and checked.",
+        "data": {
+          "host": "IP address or host name",
+          "port": "TCP port",
+          "unit_id": "Modbus unit ID"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Unable to read the inverter. Check host, port, unit ID and network access.",
+      "unsupported_device": "Required input registers were rejected or SoC was invalid. Check unit ID and firmware.",
+      "invalid_config": "Enter a valid host, port (1\u201365535) and unit ID (1\u2013247)."
+    },
+    "abort": {
+      "already_configured": "This endpoint and unit ID are already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Polling interval",
+        "data": {
+          "scan_interval": "Polling interval (seconds, 30\u20133600)"
+        }
+      }
+    },
+    "error": {
+      "invalid_config": "Enter an interval between 30 and 3600 seconds."
+    }
+  }
+}

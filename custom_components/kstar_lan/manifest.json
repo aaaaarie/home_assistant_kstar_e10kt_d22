@@ -1,0 +1,19 @@
+{
+  "domain": "kstar_lan",
+  "name": "KSTAR LAN",
+  "codeowners": [
+    "@aaaaarie"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/aaaaarie/home_assistant_kstar_e10kt_d22",
+  "issue_tracker": "https://github.com/aaaaarie/home_assistant_kstar_e10kt_d22/issues",
+  "iot_class": "local_polling",
+  "integration_type": "device",
+  "requirements": [
+    "pymodbus==3.13.1"
+  ],
+  "version": "0.1.0",
+  "loggers": [
+    "pymodbus"
+  ]
+}

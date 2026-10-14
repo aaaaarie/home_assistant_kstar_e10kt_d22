@@ -103,3 +103,34 @@ async def test_options_flow(hass):
     flow = KstarOptionsFlow()
     flow.hass = hass
     assert (await flow.async_step_init({"scan_interval": 120}))["data"] == {"scan_interval": 120}
+
+
+async def test_user_form_serializes_for_ha_ui(hass):
+    import json
+
+    from homeassistant.helpers.data_entry_flow import FlowManagerIndexView
+
+    flow = KstarConfigFlow()
+    flow.hass = hass
+    result = await flow.async_step_user()
+    rendered = FlowManagerIndexView(Mock())._prepare_result_json(result)
+    json.dumps(rendered)
+    assert {field["name"] for field in rendered["data_schema"]} == {"host", "port", "unit_id"}
+
+
+async def test_options_form_serializes_for_ha_ui(hass, entry):
+    import json
+
+    from homeassistant import config_entries
+    from homeassistant.helpers.data_entry_flow import FlowManagerIndexView
+
+    hass.config_entries = config_entries.ConfigEntries(hass, {})
+    await hass.config_entries.async_initialize()
+    hass.config_entries._entries[entry.entry_id] = entry
+    flow = KstarOptionsFlow()
+    flow.hass = hass
+    flow.handler = entry.entry_id
+    result = await flow.async_step_init()
+    rendered = FlowManagerIndexView(Mock())._prepare_result_json(result)
+    json.dumps(rendered)
+    assert rendered["data_schema"][0]["name"] == "scan_interval"

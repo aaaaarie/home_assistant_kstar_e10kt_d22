@@ -7,6 +7,7 @@ from homeassistant import config_entries, loader
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import frame
+from homeassistant.helpers.data_entry_flow import FlowManagerIndexView
 
 
 async def test_real_entry_and_sensor_platform(hass):
@@ -25,6 +26,7 @@ async def test_real_entry_and_sensor_platform(hass):
         patch("custom_components.kstar_lan.config_flow.KstarClient", return_value=client),
     ):
         form = await hass.config_entries.flow.async_init("kstar_lan", context={"source": "user"})
+        FlowManagerIndexView(hass.config_entries.flow)._prepare_result_json(form)
         result = await hass.config_entries.flow.async_configure(
             form["flow_id"], {"host": "192.168.178.238", "port": 502, "unit_id": 1}
         )
@@ -41,6 +43,7 @@ async def test_real_entry_and_sensor_platform(hass):
         assert duplicate["reason"] == "already_configured"
         assert client.read.await_count == before
         options = await hass.config_entries.options.async_init(entry.entry_id)
+        FlowManagerIndexView(hass.config_entries.options)._prepare_result_json(options)
         await hass.config_entries.options.async_configure(
             options["flow_id"], {"scan_interval": 120}
         )

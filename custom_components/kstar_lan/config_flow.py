@@ -35,6 +35,9 @@ USER_SCHEMA = vol.Schema(
         ),
     }
 )
+# UI fields must be serializable; keep custom host normalization in validation.
+USER_FORM_SCHEMA = USER_SCHEMA.extend({vol.Required(CONF_HOST): str})
+
 OPTIONS_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.All(
@@ -80,7 +83,7 @@ class KstarConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     return self.async_create_entry(
                         title=f"KSTAR LAN ({data[CONF_HOST]})", data=data
                     )
-        return self.async_show_form(step_id="user", data_schema=USER_SCHEMA, errors=errors)
+        return self.async_show_form(step_id="user", data_schema=USER_FORM_SCHEMA, errors=errors)
 
     @staticmethod
     @callback

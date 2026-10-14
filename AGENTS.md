@@ -45,7 +45,9 @@ Record that evidence and update the inventory when modifying the map.
 ## Verification expectations
 
 Tests use actual HA Core 2026.10.0 and a mocked transport. The in-process platform
-check exercises registration; it is not HA OS/UI or hardware validation. Decoder
+check exercises registration and serializes config/options forms through HA's
+HTTP flow helper; it is not full HA OS/UI or hardware validation. Keep custom
+validators out of displayed form schemas unless HA can serialize them. Decoder
 and availability tests prove behavior, not the reference map. Prefer tests of
 failure modes and contracts over duplicating guessed addresses as assertions.
 

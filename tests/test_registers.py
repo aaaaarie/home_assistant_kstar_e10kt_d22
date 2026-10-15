@@ -48,7 +48,7 @@ def test_conservative_map():
 def test_known_addresses_and_reference_only_measurements():
     # The two wire addresses have device evidence; other addresses do not.
     assert SENSOR_BY_KEY["battery_soc"].words == (3066,)
-    assert "house_power" not in SENSOR_BY_KEY
+    assert SENSOR_BY_KEY["house_power"].words == (3144, 3145, 3146)
     for sensor in SENSORS:
         if sensor.key not in {"battery_soc", "model_code"}:
             assert not sensor.verified
@@ -59,6 +59,20 @@ def test_known_addresses_and_reference_only_measurements():
 def test_provisional_battery_power_components(raw, charging, discharging):
     assert SENSOR_BY_KEY["battery_charging_power"].decode([raw]) == charging
     assert SENSOR_BY_KEY["battery_discharging_power"].decode([raw]) == discharging
+
+
+@pytest.mark.parametrize(
+    "words,expected",
+    [
+        ([100, 200, 350], 650),
+        ([40000, 20000, 10000], 70000),
+        ([0, 0, 0], 0),
+        ([100, 200], None),
+        ([100, None, 350], None),
+    ],
+)
+def test_house_power_sums_separate_phase_words(words, expected):
+    assert SENSOR_BY_KEY["house_power"].decode(words) == expected
 
 
 def test_overview_defers_detailed_measurements():

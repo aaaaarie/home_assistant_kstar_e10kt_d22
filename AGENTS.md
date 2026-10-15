@@ -1,6 +1,10 @@
 # Working rules
 
 - Work in agreed phases; report back at each boundary. Pushing is not implied.
+- Single-user hobby project: keep documentation concise and factual. Keep
+  measurements, registers, conclusions and remaining gaps in `docs/overview.md`;
+  no event diaries, conversation summaries or duplicate checklists. README covers
+  setup/use; AGENTS.md covers working rules.
 - Target one KSTAR system overview: energy flows, counters, temperatures and alarms.
   P1 supplies grid data. Support AC PV now and direct DC PV later; no Huawei dependency.
 - Read-only LAN monitoring. No writes, controls, scheduling, cloud calls or arbitrary scans.

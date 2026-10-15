@@ -1,79 +1,68 @@
-# System overview — working evidence table
+# System overview
 
-Scope: one KSTAR system device, combined battery behavior, energy distribution,
-temperatures and alarms. Individual pack details, phase measurements, volts,
-amps, frequency and model diagnostics are out of scope. The existing P1 meter
-supplies grid import/export; this integration does not connect to or copy its data.
-PV monitoring covers both current AC coupling and future direct DC connection to
-KSTAR. The external PV inverter brand is not an integration dependency.
+One KSTAR system: energy flows, counters, temperatures and alarms.
+P1 supplies grid measurements. AC PV uses the existing external inverter;
+direct DC PV is not connected yet. Read-only LAN monitoring.
 
-“Known” is limited to the observed states. “Provisional” means published reference
-and/or a plausible observation, not D22 semantic validation. A documented address
-and a live match are different evidence. See `observations.md` and `registers.md`.
+Addresses are zero-based FC04. Multiword tuples below are high-word first.
+Accepted means sufficient agreement for this installation.
 
-| Wanted measurement | Evidence now | Source / next step | Current HA behavior |
+| Measurement | Register / decoding | Finding | HA |
 | --- | --- | --- | --- |
-| Battery SoC (%) | Known: exact app matches | FC04 3066 ×0.1 | Enabled |
-| Signed battery power / discharge (W) | App-matched positive discharge | FC04 3065; verify opposite direction | Enabled |
-| Battery charging power (W) | Provisional: negative means charge | max(-3065, 0); compare during charging | Enabled |
-| Battery charged/discharged energy (kWh) | Published counters; small values, scale/reset behavior unverified | FC04 3299–3300 / 3292–3293 | Enabled |
-| Grid import/export power and energy | User has another source; its entities/units not yet reviewed here | Existing P1 meter in HA; use as grid reference | Use existing P1 entities |
-| Total house consumption power (W) | Provisional candidate: sum of phase loads; last sample 650 W | FC04 3144–3146; confirm coverage against app | Aggregate not implemented; no phase entities exposed |
-| House/load energy (kWh) | Published counter; scope/scale unverified | FC04 3152–3153; compare app total and changes | Enabled |
-| AC solar production / AC_PV (W) | Needed; address unknown | D22 register evidence needed; app last reported 77 W | No guessed entity |
-| AC solar production energy (kWh) | Needed; KSTAR AC counter unknown | Identify KSTAR AC-side counter independently of external inverter brand | Not implemented |
-| DC PV1/PV2 power (W), for future direct PV wiring | Published addresses; both read zero under current wiring | FC04 3024 / 3025; verify nonzero scaling after installation changes | Enabled |
-| PV generated energy (kWh), future DC use candidate | Published generic PV counter; D22 DC/AC scope unverified | FC04 3041–3042 ×0.1; confirm scope and changes before labeling DC energy | Enabled |
-| Battery temperature (°C) | Published scalar; plausible 20.8 °C; pack/aggregate scope unconfirmed | FC04 3067; identify app's temperature scope | Enabled |
-| Inverter, battery radiator and chassis temperatures (°C) | Published scalars; plausible 35.8 / 36.3 / 43.6 °C | FC04 3055 / 3056 / 3057; app exposes no matching radiator/chassis values, so independent comparison is unavailable | Enabled |
-| Operating/system status | Published codes; observed 2 / 2 / 3 suggest grid-connected discharge | FC04 3046 / 3047 / 3048; older lookups | Enabled raw codes |
-| Alarm and fault flags | Published 32-bit warning/fault bitmaps; no D22 live comparison yet | FC04 3049–3050 / 3051–3052; confirm bit meanings and app severity correspondence | Enabled raw masks, hex and active bit positions |
-| Named alarm messages and severity levels | D22 manual defines system errors/alarms and separate BMS alarms/protections/faults; complete register mapping and app levels still unknown | Cross-check manual §8.3 with Modbus protocol, including extended codes | Raw sensors only; named mapping pending |
-| Combined battery/BMS safety status | Needed; per-pack detail is not required in the overview | Identify documented BMS alarm/protection/fault registers and combine while retaining unknown states | Not implemented |
+| Battery SoC (%) | 3066 ×0.1 | Accepted; matches Sync | Enabled |
+| Signed battery power (W) | 3065, S16 | Accepted; positive discharge, negative charge | Enabled |
+| Charging / discharging power (W) | max(−3065, 0) / max(3065, 0) | Accepted in both directions | Enabled |
+| Battery charged / discharged energy (kWh) | (3299, 3300) / (3292, 3293), U32 ×1 | Accepted; totals match Sync; observed whole-kWh steps | Enabled |
+| Grid import/export power and energy | Existing P1 entities | P1 is the grid source | Existing P1 |
+| Total house power (W) | Sum 3144–3146, three U16 ×1 | Published phase loads; total needs comparison with Sync | Implemented locally |
+| Load consumed energy (kWh) | (3152, 3153), U32 ×0.1 | Accepted accumulated consumption; changes agree within 0.1 kWh; lifetime/reset scope unconfirmed | Enabled |
+| AC PV power (W) | Candidates 3092 / 3327 / 3427, U16 assuming ×1 W | 3092 has earlier near-app comparisons; others are weaker numeric matches | Three enabled sensors named “AC PV candidate [address]”; compare with Sync AC_PV |
+| AC PV energy (kWh) | Unknown | Register mapping needed | Missing |
+| Future DC PV1 / PV2 power (W) | 3024 / 3025, S16 ×1 | Accepted published mappings for this build; inputs unconnected | Enabled |
+| DC PV energy (kWh) | (3041, 3042), U32 ×0.1 | Accepted as DC energy by agreement; not a nonzero live comparison | Enabled |
+| Battery temperature (°C) | 3067, S16 ×0.1 | Accepted; matches Sync; pack/aggregate scope unspecified | Enabled |
+| Inverter / battery radiator / chassis temperature (°C) | 3055 / 3056 / 3057, S16 ×0.1 | Published; plausible readings; no matching Sync fields | Enabled |
+| System / inverter / DCDC status | 3046 / 3047 / 3048 | Raw codes; meanings need comparison with operating state | Enabled |
+| Alarm / fault flags | (3049, 3050) / (3051, 3052), U32 | Raw masks available; D22 meanings and coverage incomplete | Masks, hex, active bits |
+| Named alarms and severity | Incomplete mapping | D22 manual categories exceed older map coverage | Missing |
+| Combined BMS alarm/protection/fault status | Unknown | Documented register mapping needed | Missing |
 
-All 19 overview entities are enabled by default for this validation build, including
-previously integration-disabled candidates. Explicit user disables are respected.
-Evidence status stays in this table, not in HA names or attributes. Keep the
-Recorder exclusion while comparing. All overview sensors share up to 17 bounded
-register reads per polling interval.
+Comparison measurements, 15 October 2026. Pairs are HA / Sync; energy in kWh.
 
-Existing out-of-scope registrations are removed during setup. Only the 19 wanted
-measurements remain in code and HA; older unused definitions are not retained as
-hidden entities. Current entity IDs keep the `sensor.kstar_lan_` prefix.
+| Time | SoC (%) | Battery temperature (°C) | Charged / discharged totals, both sources | HA load total / Sync daily load |
+| --- | --- | --- | --- | --- |
+| 00:02–00:03 | 30 / 30 | 20.9 / 20.9 | 1 / 4 | 5.10 / 0.0 |
+| 13:10–13:11 | 26 / 26 | 21.8 / 21.8 | 2 / 6 | 9.10 / 3.9 |
+| 18:17–18:18 | 50 / 50 | 24.0 / 24.0 | 5 / 7 | 11.50 / 6.3 |
+| 19:12 | 37 / 37 | 23.4 / 23.4 | 5 / 8 | 13.10 / 8.0 |
 
-## Alarms without an app
+Battery power HA / Sync: discharge 363 / 368 W, charging 1125 / 607 W,
+discharge 1226 W / 1.2 kW, discharge 480 / 495 W. Differences are accepted
+as normal refresh/solar variation. Use Sync real-time counters for comparisons;
+its chart lags and showed inconsistent daily values around midnight.
 
-The published protocol provides local warning and fault bitfields, allowing a
-monitoring system to poll them and translate validated set bits into messages or
-notifications. This implementation initially exposes only the raw unsigned mask,
-hex value and active bit positions. It does not assert an app severity or claim
-that a zero mask establishes system safety. Unknown/unavailable data is not
-translated into an all-clear state. No automatic notification is configured.
+AC_PV search coverage: 225 of 441 slots in 3000–3440 read successfully;
+216 set aside as settings/control, metadata or internal-use fields. Filter:
+raw 60–100, excluding identified measurements. Shortlist: 3092 (83), 3327 (100),
+3427 (90). Older map: 3092/3327 reserved; 3427 unspecified among grid-support
+settings, so both new candidates are weaker and may be constants. Earlier
+3092 readings 87–89 agreed with app 88–93, but remained 83 after app 65–67.
+Compare all three during daylight; nighttime app AC_PV is not established as
+actual solar production. No mappings promoted.
 
-Protocol references: [Solarman register map](https://github.com/StephanJoubert/home_assistant_solarman/blob/fe261ddfb03821c29580dbc8ddbfb81ef130041d/custom_components/solarman/inverter_definitions/kstar_hybrid.yaml),
-[KSTAR-authored protocol V2.9.1, third-party-hosted copy, tables 3.1.1–3.1.3](https://www.scribd.com/document/1021396207/KSTAR-Hybrid-Inverter-Modbus-V2-9-1-2024-07-21).
-Applicability and coverage of D22 firmware still need confirmation.
+23 overview entities including three temporary AC PV candidates, enabled by default;
+explicit user disables respected.
+Obsolete registrations are removed on setup. Plain HA names; IDs retain
+`sensor.kstar_lan_` for Recorder exclusion. One shared client/coordinator,
+at most 21 reads per interval, each bounded to 16 words.
 
-The [D22 manual](alarms.md) supplies code descriptions and distinguishes BMS alarm,
-protection and fault categories. It also documents codes beyond the older masks;
-readable raw flags do not establish full alarm coverage.
+Unavailable values stay unavailable. Zero alarm masks do not establish system
+safety or complete alarm coverage. No invented severity or code mappings.
 
-## Period energy values
+Remaining checks are in the table. Next capture: existing overview registers
+plus 3144–3146, with decoded values and corresponding raw words in one result.
+Compare total load, status and alarm flags with Sync during natural charging and
+discharging. Accepted readings need no repeat campaign. Capture scope must be
+agreed before hardware reads; AC PV/BMS additions require documented addresses.
 
-Prefer validated lifetime counters for the Energy dashboard. HA statistics can
-report energy usage over time from them; Utility Meter helpers can track daily,
-monthly or yearly periods. Device period counters can later provide comparisons,
-but are not priority entities. Power (W) and cumulative energy (kWh) must retain
-different meanings. Keep the Recorder exclusion during provisional testing.
-
-The [comparison checklist](validation.md) maps every wanted measurement to its
-HA entities and the observations to collect during natural operating states.
-
-## Next useful comparisons
-
-1. Compare signed battery power during natural charging.
-2. Confirm whether 3144–3146 cover the house's total consumption.
-3. Check alarm/fault readability and map app messages when naturally present;
-   do not induce a fault to validate telemetry.
-4. Track counter changes over a measurable energy transfer.
-5. Obtain documented KSTAR AC_PV evidence; retain the DC PV candidates for future direct PV wiring.
+Sources and mapping detail: [registers](registers.md), [alarms](alarms.md).

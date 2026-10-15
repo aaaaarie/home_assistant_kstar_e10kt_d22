@@ -4,8 +4,7 @@ Numeric facts from Solarman's kstar_hybrid.yaml (KSTAR protocol V2.5).
 S/T phases and per-phase load naming: KSTAR protocol V2.9.1, table 3.1.1,
 public third-party-hosted copy; applicability to D22 remains unverified.
 Our word tuples list the high word first. Solarman lists multiword addresses
-LOW word first (see its parser). Battery positive-discharge direction has one
-app comparison; negative-charge direction is a provisional assumption.
+LOW word first (see its parser). Battery power agrees with Sync in both directions.
 """
 
 from dataclasses import dataclass
@@ -18,6 +17,7 @@ class RegisterSensor:
     words: tuple[int, ...]
     scale: float = 1
     signed: bool = False
+    sum_words: bool = False
     unit: str | None = None
     device_class: str | None = None
     state_class: str | None = "measurement"
@@ -48,12 +48,17 @@ class RegisterSensor:
             type(word) is not int or not 0 <= word <= 65535 for word in registers
         ):
             return None
-        value = 0
-        for address in self.words:
-            value = (value << 16) | registers[address - self.address]
-        bits = 16 * len(self.words)
-        if self.signed and value & (1 << (bits - 1)):
-            value -= 1 << bits
+        if self.sum_words:
+            value = sum(
+                word - 65536 if self.signed and word & 0x8000 else word for word in registers
+            )
+        else:
+            value = 0
+            for address in self.words:
+                value = (value << 16) | registers[address - self.address]
+            bits = 16 * len(self.words)
+            if self.signed and value & (1 << (bits - 1)):
+                value -= 1 << bits
         decoded = round(value * self.scale, 6)
         if (self.minimum is not None and decoded < self.minimum) or (
             self.maximum is not None and decoded > self.maximum
@@ -136,6 +141,15 @@ SENSORS = (
         state_class="total_increasing",
     ),
     RegisterSensor(
+        "house_power",
+        "House power",
+        (3144, 3145, 3146),
+        sum_words=True,
+        unit="W",
+        device_class="power",
+        provenance="kstar_protocol_v2.9.1",
+    ),
+    RegisterSensor(
         "house_energy",
         "Load consumed energy",
         (3152, 3153),
@@ -185,6 +199,30 @@ SENSORS = (
     ),
     RegisterSensor(
         "pv2_power", "DC PV2 power", (3025,), signed=True, unit="W", device_class="power"
+    ),
+    RegisterSensor(
+        "ac_pv_candidate_3092",
+        "AC PV candidate 3092",
+        (3092,),
+        unit="W",
+        device_class="power",
+        provenance="exploratory_raw_match",
+    ),
+    RegisterSensor(
+        "ac_pv_candidate_3327",
+        "AC PV candidate 3327",
+        (3327,),
+        unit="W",
+        device_class="power",
+        provenance="exploratory_raw_match",
+    ),
+    RegisterSensor(
+        "ac_pv_candidate_3427",
+        "AC PV candidate 3427",
+        (3427,),
+        unit="W",
+        device_class="power",
+        provenance="exploratory_raw_match",
     ),
     RegisterSensor(
         "pv_total_energy",

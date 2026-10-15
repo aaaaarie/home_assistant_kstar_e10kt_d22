@@ -86,7 +86,7 @@ async def test_obsolete_entities_removed_without_touching_overview(hass, entry):
         await async_setup_entry(hass, entry)
     assert registry.async_get(voltage.entity_id) is None
     assert registry.async_get(user_disabled.entity_id) is None
-    assert client.read.await_count == 17
+    assert client.read.await_count == 21
 
     assert registry.async_get(wanted.entity_id).unique_id == wanted.unique_id
     assert registry.async_get(unrelated.entity_id) is not None

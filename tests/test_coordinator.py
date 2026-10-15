@@ -26,7 +26,7 @@ async def test_default_reads_and_device(coordinator):
     coordinator.data = await coordinator._async_update_data()
     assert coordinator.data["battery_soc"] == 53
     assert "model_code" not in coordinator.data
-    assert coordinator.client.read.await_count == 17
+    assert coordinator.client.read.await_count == 21
     soc = KstarSensor(coordinator, SENSOR_BY_KEY["battery_soc"])
     power = KstarSensor(coordinator, SENSOR_BY_KEY["battery_power"])
     assert soc.available
@@ -55,7 +55,7 @@ async def test_registry_enable_backoff_and_recovery(coordinator, hass, entry):
     assert coordinator.errors["battery_power"] == "register_rejected"
     coordinator.client.read.reset_mock()
     await coordinator._async_update_data()
-    assert coordinator.client.read.await_count == 16
+    assert coordinator.client.read.await_count == 20
     coordinator._retry_at[(3065, 1)] = 0
     coordinator.client.read.side_effect = lambda address, count: (
         [65535] if address == 3065 else ([530] if address == 3066 else [40] * count)

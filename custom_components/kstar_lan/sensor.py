@@ -41,14 +41,18 @@ class KstarSensor(CoordinatorEntity[KstarCoordinator], SensorEntity):
             manufacturer="KSTAR",
             model="BlueSpark E10KT-D22",
         )
-        self._attr_extra_state_attributes = {
-            "register_addresses": list(definition.words),
-            "modbus_function": 4,
-            "scale": definition.scale,
-            "provenance": definition.provenance,
-            "signed": definition.signed,
-            "power_component": definition.power_component,
-        }
+        self._attr_extra_state_attributes = (
+            {}
+            if definition.sources
+            else {
+                "register_addresses": list(definition.words),
+                "modbus_function": 4,
+                "scale": definition.scale,
+                "provenance": definition.provenance,
+                "signed": definition.signed,
+                "power_component": definition.power_component,
+            }
+        )
 
     @property
     def available(self) -> bool:

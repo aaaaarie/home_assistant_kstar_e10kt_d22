@@ -18,6 +18,7 @@ class RegisterSensor:
     scale: float = 1
     signed: bool = False
     sum_words: bool = False
+    sources: tuple[str, ...] = ()
     unit: str | None = None
     device_class: str | None = None
     state_class: str | None = "measurement"
@@ -36,10 +37,12 @@ class RegisterSensor:
 
     @property
     def address(self) -> int:
-        return min(self.words)
+        return min(self.words, default=0)
 
     @property
     def count(self) -> int:
+        if not self.words:
+            return 0
         return max(self.words) - self.address + 1
 
     def decode(self, registers: list[int]) -> int | float | None:
@@ -201,28 +204,38 @@ SENSORS = (
         "pv2_power", "DC PV2 power", (3025,), signed=True, unit="W", device_class="power"
     ),
     RegisterSensor(
-        "ac_pv_candidate_3092",
-        "AC PV candidate 3092",
-        (3092,),
+        "ac_pv_power",
+        "AC PV power",
+        (),
         unit="W",
         device_class="power",
-        provenance="exploratory_raw_match",
+        sources=(
+            "house_power",
+            "battery_power",
+            "grid_r",
+            "grid_s",
+            "grid_t",
+            "pv1_power",
+            "pv2_power",
+        ),
+        provenance="calculated_energy_balance",
     ),
     RegisterSensor(
-        "ac_pv_candidate_3327",
-        "AC PV candidate 3327",
-        (3327,),
-        unit="W",
-        device_class="power",
-        provenance="exploratory_raw_match",
-    ),
-    RegisterSensor(
-        "ac_pv_candidate_3427",
-        "AC PV candidate 3427",
-        (3427,),
-        unit="W",
-        device_class="power",
-        provenance="exploratory_raw_match",
+        "ac_pv_energy",
+        "AC PV energy",
+        (),
+        unit="kWh",
+        device_class="energy",
+        state_class="total_increasing",
+        sources=(
+            "house_energy",
+            "battery_total_charge",
+            "battery_total_discharge",
+            "grid_import",
+            "grid_export",
+            "pv_total_energy",
+        ),
+        provenance="calculated_energy_balance",
     ),
     RegisterSensor(
         "pv_total_energy",
@@ -252,3 +265,13 @@ SENSORS = (
 )
 SENSOR_BY_KEY = {sensor.key: sensor for sensor in SENSORS}
 OVERVIEW_SENSOR_KEYS = frozenset(SENSOR_BY_KEY)
+
+# Calculation inputs only: never registered as HA entities.
+CALCULATION_INPUTS = (
+    RegisterSensor("grid_r", "", (3100,), signed=True),
+    RegisterSensor("grid_s", "", (3104,), signed=True),
+    RegisterSensor("grid_t", "", (3108,), signed=True),
+    RegisterSensor("grid_import", "", (3114, 3115), scale=0.1),
+    RegisterSensor("grid_export", "", (3121, 3122), scale=0.1),
+)
+INPUT_BY_KEY = {s.key: s for s in (*SENSORS, *CALCULATION_INPUTS) if s.words}

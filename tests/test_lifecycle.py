@@ -62,6 +62,15 @@ async def test_obsolete_entities_removed_without_touching_overview(hass, entry):
     hass.config_entries = Mock(async_forward_entry_setups=AsyncMock())
     hass.config_entries.async_get_entry.return_value = entry
     registry = er.async_get(hass)
+    rejected_candidates = [
+        registry.async_get_or_create(
+            "sensor",
+            "kstar_lan",
+            f"{entry.unique_id}_ac_pv_candidate_{address}",
+            config_entry=entry,
+        )
+        for address in (3092, 3327, 3427)
+    ]
     voltage = registry.async_get_or_create(
         "sensor", "kstar_lan", f"{entry.unique_id}_battery_voltage", config_entry=entry
     )
@@ -86,7 +95,9 @@ async def test_obsolete_entities_removed_without_touching_overview(hass, entry):
         await async_setup_entry(hass, entry)
     assert registry.async_get(voltage.entity_id) is None
     assert registry.async_get(user_disabled.entity_id) is None
-    assert client.read.await_count == 21
+    assert client.read.await_count == 23
+    assert all(registry.async_get(record.entity_id) is None for record in rejected_candidates)
+    assert not any(call.args[0] in (3092, 3327, 3427) for call in client.read.await_args_list)
 
     assert registry.async_get(wanted.entity_id).unique_id == wanted.unique_id
     assert registry.async_get(unrelated.entity_id) is not None
@@ -122,4 +133,5 @@ async def test_overview_auto_enables_candidates_but_respects_user_disables(hass,
     assert registry.async_get(user_disabled.entity_id).disabled_by == er.RegistryEntryDisabler.USER
     assert "battery_temperature" in entry.runtime_data.data
     assert "pv1_power" not in entry.runtime_data.data
-    assert not any(call.args[0] == 3024 for call in client.read.await_args_list)
+    # The disabled entity stays disabled, but AC PV still needs its DC input.
+    assert any(call.args[0] == 3024 for call in client.read.await_args_list)

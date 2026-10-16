@@ -27,6 +27,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     client = KstarClient(entry.data[CONF_HOST], entry.data[CONF_PORT], entry.data[CONF_UNIT_ID])
     coordinator = KstarCoordinator(hass, entry, client)
     try:
+        await coordinator.async_load_energy()
         await coordinator.async_config_entry_first_refresh()
         entry.runtime_data = coordinator
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

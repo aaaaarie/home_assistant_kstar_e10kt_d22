@@ -7,11 +7,13 @@ from time import monotonic
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN
+from .energy import EnergyBalance
 from .modbus import CannotConnect, KstarClient, RegisterUnavailable
-from .registers import SENSORS
+from .registers import INPUT_BY_KEY, SENSORS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,6 +34,11 @@ class KstarCoordinator(DataUpdateCoordinator[dict[str, int | float | None]]):
         self.raw: dict[str, list[int]] = {}
         self.errors: dict[str, str] = {}
         self._retry_at: dict[tuple[int, int], float] = {}
+        self.energy = EnergyBalance()
+        self._energy_store = Store(hass, 1, f"{DOMAIN}.{entry.entry_id}.ac_pv_energy")
+
+    async def async_load_energy(self) -> None:
+        self.energy = EnergyBalance.restore(await self._energy_store.async_load())
 
     def _enabled(self, key: str, default: bool) -> bool:
         registry = er.async_get(self.hass)
@@ -46,8 +53,10 @@ class KstarCoordinator(DataUpdateCoordinator[dict[str, int | float | None]]):
         self.errors = {}
         successful_reads = 0
         read_results: dict[tuple[int, int], list[int]] = {}
-        for sensor in SENSORS:
-            if not self._enabled(sensor.key, sensor.enabled_default):
+        enabled = [s for s in SENSORS if self._enabled(s.key, s.enabled_default)]
+        needed = {key for s in enabled for key in (s.sources or (s.key,))}
+        for sensor in INPUT_BY_KEY.values():
+            if sensor.key not in needed:
                 continue
             values[sensor.key] = None
             read_range = (sensor.address, sensor.count)
@@ -73,4 +82,28 @@ class KstarCoordinator(DataUpdateCoordinator[dict[str, int | float | None]]):
                 self.errors[sensor.key] = "invalid_value"
         if values and successful_reads == 0:
             raise UpdateFailed("No enabled registers could be read")
-        return values
+        for sensor in enabled:
+            if not sensor.sources:
+                continue
+            values[sensor.key] = None
+            if any(values.get(key) is None for key in sensor.sources):
+                self.errors[sensor.key] = "source_unavailable"
+                continue
+            if sensor.key == "ac_pv_power":
+                # KSTAR grid power is positive export, negative import.
+                values[sensor.key] = max(
+                    0,
+                    values["house_power"]
+                    - values["battery_power"]
+                    + sum(values[key] for key in ("grid_r", "grid_s", "grid_t"))
+                    - values["pv1_power"]
+                    - values["pv2_power"],
+                )
+            elif sensor.key == "ac_pv_energy":
+                before = self.energy.as_dict()
+                values[sensor.key] = self.energy.update(
+                    {key: values[key] for key in sensor.sources}
+                )
+                if self.energy.as_dict() != before:
+                    await self._energy_store.async_save(self.energy.as_dict())
+        return {s.key: values[s.key] for s in enabled}

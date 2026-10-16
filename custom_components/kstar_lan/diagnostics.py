@@ -13,5 +13,5 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
         "raw_input_registers": coordinator.raw,
         "decoded_values": coordinator.data if coordinator.last_update_success else {},
         "errors": coordinator.errors,
-        "ac_pv": "Comparing candidates 3092, 3327, 3427; mapping unconfirmed",
+        "ac_pv": "Calculated from internal power and counter balances; compare with Sync",
     }

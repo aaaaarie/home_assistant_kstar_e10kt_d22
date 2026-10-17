@@ -128,17 +128,19 @@ SENSORS = (
         maximum=100,
     ),
     RegisterSensor(
-        "battery_total_discharge",
-        "Battery discharged energy",
-        (3292, 3293),
+        "battery_daily_discharge",
+        "Battery daily discharged energy",
+        (3294,),
+        scale=0.1,
         unit="kWh",
         device_class="energy",
         state_class="total_increasing",
     ),
     RegisterSensor(
-        "battery_total_charge",
-        "Battery charged energy",
-        (3299, 3300),
+        "battery_daily_charge",
+        "Battery daily charged energy",
+        (3301,),
+        scale=0.1,
         unit="kWh",
         device_class="energy",
         state_class="total_increasing",
@@ -229,8 +231,8 @@ SENSORS = (
         state_class="total_increasing",
         sources=(
             "house_energy",
-            "battery_total_charge",
-            "battery_total_discharge",
+            "battery_daily_charge",
+            "battery_daily_discharge",
             "grid_import",
             "grid_export",
             "pv_total_energy",
@@ -239,7 +241,7 @@ SENSORS = (
     ),
     RegisterSensor(
         "pv_total_energy",
-        "PV generated energy",
+        "DC PV generated energy",
         (3041, 3042),
         scale=0.1,
         unit="kWh",
@@ -266,8 +268,10 @@ SENSORS = (
 SENSOR_BY_KEY = {sensor.key: sensor for sensor in SENSORS}
 OVERVIEW_SENSOR_KEYS = frozenset(SENSOR_BY_KEY)
 
-# Calculation inputs only: never registered as HA entities.
+# Internal calculation and diagnostic inputs: never registered as HA entities.
 CALCULATION_INPUTS = (
+    RegisterSensor("battery_total_charge", "", (3299, 3300)),
+    RegisterSensor("battery_total_discharge", "", (3292, 3293)),
     RegisterSensor("grid_r", "", (3100,), signed=True),
     RegisterSensor("grid_s", "", (3104,), signed=True),
     RegisterSensor("grid_t", "", (3108,), signed=True),

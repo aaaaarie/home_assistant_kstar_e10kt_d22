@@ -1,4 +1,5 @@
-from unittest.mock import AsyncMock, Mock
+from datetime import datetime
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from homeassistant.helpers import entity_registry as er
@@ -26,6 +27,8 @@ def set_snapshot(
 ):
     words = {
         3066: 500,
+        3301: round(charge * 10),
+        3294: round(discharge * 10),
         3065: battery & 65535,
         3144: load,
         3145: 0,
@@ -38,8 +41,8 @@ def set_snapshot(
     }
     for address, value in (
         (3152, round(house * 10)),
-        (3299, charge),
-        (3292, discharge),
+        (3299, int(charge)),
+        (3292, int(discharge)),
         (3114, round(imported * 10)),
         (3121, round(exported * 10)),
         (3041, round(dc_energy * 10)),
@@ -136,8 +139,100 @@ async def test_disabling_calculations_stops_internal_grid_reads(coordinator, has
         )
     await coordinator.async_refresh()
     assert not any(key.startswith("ac_pv_") for key in coordinator.data)
-    assert coordinator.client.read.await_count == 18
+    assert coordinator.client.read.await_count == 20
     assert not any(
         call.args[0] in (3100, 3104, 3108, 3114, 3121)
         for call in coordinator.client.read.await_args_list
     )
+
+
+async def test_fractional_battery_energy_without_lifetime_counter_change(coordinator):
+    set_snapshot(coordinator.client, charge=0.3, discharge=0)
+    await coordinator.async_refresh()
+    assert coordinator.data["battery_daily_charge"] == 0.3
+    assert coordinator.data["battery_daily_discharge"] == 0
+    assert "battery_total_charge" not in coordinator.data
+    assert coordinator.raw["battery_total_charge"] == [0, 0]
+    set_snapshot(coordinator.client, charge=0.4, discharge=0)
+    await coordinator.async_refresh()
+    assert coordinator.data["battery_daily_charge"] == 0.4
+    assert coordinator.data["ac_pv_energy"] == 0.1
+    assert coordinator.raw["battery_total_charge"] == [0, 0]
+
+
+async def test_daily_source_unavailable_preserves_baseline(coordinator):
+    await coordinator.async_refresh()
+    set_snapshot(coordinator.client, charge=10.1, rejected=3301)
+    await coordinator.async_refresh()
+    assert not KstarSensor(coordinator, SENSOR_BY_KEY["battery_daily_charge"]).available
+    assert coordinator.data["ac_pv_energy"] is None
+    assert coordinator.energy.previous["battery_daily_charge"] == 10
+    coordinator._retry_at[(3301, 1)] = 0
+    set_snapshot(coordinator.client, charge=10.2)
+    await coordinator.async_refresh()
+    assert coordinator.data["ac_pv_energy"] == 0.2
+
+
+async def test_lifetime_diagnostic_failure_does_not_block_daily_energy(coordinator):
+    set_snapshot(coordinator.client, charge=0.3, rejected=3299)
+    await coordinator.async_refresh()
+    assert coordinator.data["battery_daily_charge"] == 0.3
+    assert coordinator.data["ac_pv_energy"] == 0
+    assert coordinator.errors["battery_total_charge"] == "register_rejected"
+
+
+async def test_midnight_restart_preserves_total_and_rebaselines(coordinator, hass, entry):
+    with patch("custom_components.kstar_lan.coordinator.dt_util.now") as now:
+        now.return_value = datetime(2026, 10, 17, 23, 58)
+        await coordinator.async_load_energy()
+        await coordinator.async_refresh()
+        set_snapshot(coordinator.client, charge=10.1)
+        await coordinator.async_refresh()
+        assert coordinator.data["ac_pv_energy"] == 0.1
+        restarted = KstarCoordinator(hass, entry, coordinator.client)
+        await restarted.async_load_energy()
+        now.return_value = datetime(2026, 10, 18, 0, 1)
+        set_snapshot(restarted.client, charge=0, discharge=0)
+        await restarted.async_refresh()
+        assert restarted.data["ac_pv_energy"] == 0.1
+        set_snapshot(restarted.client, charge=0.1, discharge=0)
+        await restarted.async_refresh()
+        assert restarted.data["ac_pv_energy"] == 0.2
+
+
+async def test_poll_spanning_midnight_does_not_save_mixed_day_counters(coordinator):
+    await coordinator.async_refresh()
+    previous = coordinator.energy.as_dict()
+    set_snapshot(coordinator.client, charge=0)
+    with patch("custom_components.kstar_lan.coordinator.dt_util.now") as now:
+        now.side_effect = [datetime(2026, 10, 17, 23, 59, 59), datetime(2026, 10, 18)]
+        await coordinator.async_refresh()
+    assert coordinator.data["ac_pv_energy"] is None
+    assert coordinator.errors["ac_pv_energy"] == "day_changed_during_poll"
+    assert coordinator.energy.as_dict() == previous
+
+
+async def test_existing_stored_ac_total_survives_upgrade(coordinator, hass, entry):
+    await coordinator._energy_store.async_save(
+        {
+            "previous": {
+                "house_energy": 28.6,
+                "battery_total_charge": 6,
+                "battery_total_discharge": 13,
+                "grid_import": 10,
+                "grid_export": 1.7,
+                "pv_total_energy": 0,
+            },
+            "balance": -0.2,
+            "total": 0.3,
+        }
+    )
+    await coordinator.async_load_energy()
+    set_snapshot(coordinator.client, charge=0.3, discharge=0)
+    await coordinator.async_refresh()
+    assert coordinator.data["ac_pv_energy"] == 0.3
+    restarted = KstarCoordinator(hass, entry, coordinator.client)
+    await restarted.async_load_energy()
+    set_snapshot(restarted.client, charge=0.4, discharge=0)
+    await restarted.async_refresh()
+    assert restarted.data["ac_pv_energy"] == 0.4

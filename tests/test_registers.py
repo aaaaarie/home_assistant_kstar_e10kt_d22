@@ -87,6 +87,8 @@ def test_overview_defers_detailed_measurements():
             "battery_current",
             "grid_import_energy",
             "grid_export_energy",
+            "battery_total_charge",
+            "battery_total_discharge",
         }
         & keys
     )
@@ -94,3 +96,13 @@ def test_overview_defers_detailed_measurements():
         key.startswith(("grid_", "load_", "inverter_r_", "inverter_s_", "inverter_t_"))
         for key in keys
     )
+
+
+@pytest.mark.parametrize(
+    "key,address", [("battery_daily_charge", 3301), ("battery_daily_discharge", 3294)]
+)
+def test_daily_battery_counter_resolution(key, address):
+    sensor = SENSOR_BY_KEY[key]
+    assert sensor.words == (address,)
+    assert sensor.decode([3]) == 0.3
+    assert sensor.state_class == "total_increasing"

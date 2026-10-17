@@ -69,6 +69,9 @@ async def test_real_entry_and_sensor_platform(hass):
     for key, name, unit, expected in (
         ("ac_pv_power", "AC PV power", "W", "120"),
         ("ac_pv_energy", "AC PV energy", "kWh", "0"),
+        ("battery_daily_charge", "Battery daily charged energy", "kWh", "4.0"),
+        ("battery_daily_discharge", "Battery daily discharged energy", "kWh", "4.0"),
+        ("pv_total_energy", "DC PV generated energy", "kWh", "262148.0"),
     ):
         entity = next(e for e in entities if e.unique_id.endswith(f"_{key}"))
         state = hass.states.get(entity.entity_id)
@@ -77,5 +80,13 @@ async def test_real_entry_and_sensor_platform(hass):
         assert state.attributes["unit_of_measurement"] == unit
     energy = hass.states.get("sensor.kstar_lan_ac_pv_energy")
     assert energy.attributes["state_class"] == "total_increasing"
+    for key in ("battery_daily_charge", "battery_daily_discharge"):
+        state = hass.states.get(f"sensor.kstar_lan_{key}")
+        assert state.attributes["state_class"] == "total_increasing"
+        assert state.attributes["device_class"] == "energy"
+    assert not any(
+        entity.unique_id.endswith(("_battery_total_charge", "_battery_total_discharge"))
+        for entity in entities
+    )
     assert await hass.config_entries.async_unload(entry.entry_id)
     client.close.assert_called()

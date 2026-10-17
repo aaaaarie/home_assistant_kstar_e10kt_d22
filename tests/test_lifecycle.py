@@ -74,6 +74,12 @@ async def test_obsolete_entities_removed_without_touching_overview(hass, entry):
     voltage = registry.async_get_or_create(
         "sensor", "kstar_lan", f"{entry.unique_id}_battery_voltage", config_entry=entry
     )
+    old_battery_energy = [
+        registry.async_get_or_create(
+            "sensor", "kstar_lan", f"{entry.unique_id}_{key}", config_entry=entry
+        )
+        for key in ("battery_total_charge", "battery_total_discharge")
+    ]
     user_disabled = registry.async_get_or_create(
         "sensor",
         "kstar_lan",
@@ -94,8 +100,9 @@ async def test_obsolete_entities_removed_without_touching_overview(hass, entry):
     with patch("custom_components.kstar_lan.KstarClient", return_value=client):
         await async_setup_entry(hass, entry)
     assert registry.async_get(voltage.entity_id) is None
+    assert all(registry.async_get(record.entity_id) is None for record in old_battery_energy)
     assert registry.async_get(user_disabled.entity_id) is None
-    assert client.read.await_count == 23
+    assert client.read.await_count == 25
     assert all(registry.async_get(record.entity_id) is None for record in rejected_candidates)
     assert not any(call.args[0] in (3092, 3327, 3427) for call in client.read.await_args_list)
 

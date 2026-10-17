@@ -26,7 +26,7 @@ async def test_default_reads_and_device(coordinator):
     coordinator.data = await coordinator._async_update_data()
     assert coordinator.data["battery_soc"] == 53
     assert "model_code" not in coordinator.data
-    assert coordinator.client.read.await_count == 23
+    assert coordinator.client.read.await_count == 25
     soc = KstarSensor(coordinator, SENSOR_BY_KEY["battery_soc"])
     power = KstarSensor(coordinator, SENSOR_BY_KEY["battery_power"])
     assert soc.available
@@ -55,7 +55,7 @@ async def test_registry_enable_backoff_and_recovery(coordinator, hass, entry):
     assert coordinator.errors["battery_power"] == "register_rejected"
     coordinator.client.read.reset_mock()
     await coordinator._async_update_data()
-    assert coordinator.client.read.await_count == 22
+    assert coordinator.client.read.await_count == 24
     coordinator._retry_at[(3065, 1)] = 0
     coordinator.client.read.side_effect = lambda address, count: (
         [65535] if address == 3065 else ([530] if address == 3066 else [40] * count)
@@ -106,6 +106,15 @@ async def test_diagnostics_redacted(coordinator, hass, entry):
     diagnostics = await async_get_config_entry_diagnostics(hass, entry)
     assert "192.168" not in str(diagnostics)
     assert diagnostics["raw_input_registers"]["battery_soc"] == [530]
+    assert diagnostics["battery_lifetime_energy_kwh"] == {
+        "battery_total_charge": 2621480,
+        "battery_total_discharge": 2621480,
+    }
+    assert diagnostics["ac_pv_energy_accumulator"] == coordinator.energy.as_dict()
+    assert (
+        diagnostics["ac_pv_energy_accumulator"]["previous"]["battery_daily_charge"]
+        == (coordinator.data["battery_daily_charge"])
+    )
     coordinator.last_update_success = False
     assert not (await async_get_config_entry_diagnostics(hass, entry))["decoded_values"]
 

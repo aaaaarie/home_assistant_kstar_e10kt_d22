@@ -21,9 +21,28 @@ Keep the config entry; the update automatically removes obsolete sensor registra
 
 Polling defaults to **60 seconds**, adjustable through **Configure**.
 
+## Energy dashboard
+
+After updating and restarting HA, replace the old battery sources in
+**Settings → Dashboards → Energy**:
+
+| Energy input | New sensor |
+| --- | --- |
+| Energy charged into the battery | `sensor.kstar_lan_battery_daily_charge` |
+| Energy discharged from the battery | `sensor.kstar_lan_battery_daily_discharge` |
+| Solar production, external AC inverter | `sensor.kstar_lan_ac_pv_energy` |
+
+Battery energy uses device counters with 0.1 kWh resolution. HA tracks their daily
+resets; no helpers or templates are required. New battery entity IDs keep their
+statistics separate from the old lifetime counters. Old battery registrations are
+removed automatically; historical statistics are not converted. AC PV keeps its
+existing entity ID and accumulated total. “DC PV generated energy” only covers
+panels connected directly to the KSTAR DC inputs.
+
 ## Recording during validation
 
-Keep this exclusion in `/config/configuration.yaml` while checking candidates:
+Energy dashboard sources must be recorded. Remove this validation exclusion from
+`/config/configuration.yaml` if present, then restart HA:
 
 ```yaml
 recorder:
@@ -32,8 +51,8 @@ recorder:
       - "sensor.kstar_lan_*"
 ```
 
-Merge into the existing `recorder:` section and restart. Live readings remain
-available. Remove the exclusion when ready to record; it doesn't delete older data.
+The exclusion leaves live readings available but prevents Energy statistics.
+Removing it does not backfill the excluded period.
 
 ## Troubleshooting
 

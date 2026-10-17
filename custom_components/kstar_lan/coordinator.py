@@ -9,6 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
 from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN
 from .energy import EnergyBalance
@@ -55,6 +56,11 @@ class KstarCoordinator(DataUpdateCoordinator[dict[str, int | float | None]]):
         read_results: dict[tuple[int, int], list[int]] = {}
         enabled = [s for s in SENSORS if self._enabled(s.key, s.enabled_default)]
         needed = {key for s in enabled for key in (s.sources or (s.key,))}
+        # Keep coarse lifetime totals as diagnostics, without registering entities.
+        for direction in ("charge", "discharge"):
+            if f"battery_daily_{direction}" in needed:
+                needed.add(f"battery_total_{direction}")
+        sample_day = dt_util.now().date()
         for sensor in INPUT_BY_KEY.values():
             if sensor.key not in needed:
                 continue
@@ -100,9 +106,12 @@ class KstarCoordinator(DataUpdateCoordinator[dict[str, int | float | None]]):
                     - values["pv2_power"],
                 )
             elif sensor.key == "ac_pv_energy":
+                if dt_util.now().date() != sample_day:
+                    self.errors[sensor.key] = "day_changed_during_poll"
+                    continue
                 before = self.energy.as_dict()
                 values[sensor.key] = self.energy.update(
-                    {key: values[key] for key in sensor.sources}
+                    {key: values[key] for key in sensor.sources}, day=sample_day
                 )
                 if self.energy.as_dict() != before:
                     await self._energy_store.async_save(self.energy.as_dict())

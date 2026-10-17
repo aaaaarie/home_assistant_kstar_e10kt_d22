@@ -15,9 +15,9 @@ Accepted means sufficient agreement for this installation.
 | Battery lifetime charged / discharged energy (kWh) | (3299, 3300) / (3292, 3293), U32 ×1 | Earlier totals matched Sync; too coarse for small transfers | Diagnostics only |
 | Daily battery charged / discharged energy (kWh) | 3301 / 3294, U16 ×0.1 | Used by agreement; raw 3 / 0 gives 0.3 / 0.0 kWh; Sync reported 0.1 / 0.0 kWh | Enabled; new entity IDs |
 | Grid import/export power and energy | Existing P1 entities | P1 is the grid source | Existing P1 |
-| Total house power (W) | Sum 3144–3146, three U16 ×1 | Published phase loads; total needs comparison with Sync | Implemented locally |
+| Total house power (W) | Sum 3144–3146, three U16 ×1 | Reported spikes near 200 kW; decoding/validity unresolved | Enabled; unreliable during spikes |
 | Load consumed energy (kWh) | (3152, 3153), U32 ×0.1 | Accepted accumulated consumption; changes agree within 0.1 kWh; lifetime/reset scope unconfirmed | Enabled |
-| AC PV power (W) | House − battery + grid export-signed sum − DC PV | Calculated estimate; compare with Sync | Enabled; rejected candidates removed |
+| AC PV power (W) | House − battery + grid export-signed sum − DC PV | Inherits house-power spikes; calculated estimate needs validation | Enabled; unreliable during spikes |
 | AC PV energy (kWh) | Counter changes: load + daily battery charge − daily battery discharge + export − import − DC PV | Calculated estimate; common baseline within each local day | Enabled; persistent total |
 | Future DC PV1 / PV2 power (W) | 3024 / 3025, S16 ×1 | Accepted published mappings for this build; inputs unconnected | Enabled |
 | DC PV energy (kWh) | (3041, 3042), U32 ×0.1 | Accepted as DC energy by agreement; not a nonzero live comparison | Enabled |
@@ -27,6 +27,23 @@ Accepted means sufficient agreement for this installation.
 | Alarm / fault flags | (3049, 3050) / (3051, 3052), U32 | Raw masks available; D22 meanings and coverage incomplete | Masks, hex, active bits |
 | Named alarms and severity | Incomplete mapping | D22 manual categories exceed older map coverage | Missing |
 | Combined BMS alarm/protection/fault status | Unknown | Documented register mapping needed | Missing |
+
+House and AC PV power are reported jumping between zero and roughly 200,000 W.
+The U16 phase-sum decoder accepts (65535, 65535, 65535) as 196,605 W, its maximum;
+(65500, 65500, 65500) gives 196,500 W. This reproduces the reported scale in
+software, not the device's actual raw sample. Negative S16 values decoded as U16
+or invalid device words are possible explanations. V2.9.1 lists 3144–3146 as U16;
+switching to signed decoding is not yet justified. Raw words from a spike and
+simultaneous Sync Load/AC_PV are needed. AC PV power's existing minimum-zero
+clamp can also hide a negative balance; there is no explicit upper clamp.
+Power readings do not feed the separate AC PV energy counter calculation.
+Diagnostics retain five recent power polls and five house-phase high-bit polls,
+with UTC read-window timestamps, raw words and decoded calculation inputs. The
+high-bit condition is a capture trigger, not evidence of signedness or invalid
+data. Normal polling supplies all samples; there are no extra device reads.
+The bounded in-memory history survives normal polls and transport failures but
+clears on integration reload/restart. A later diagnostic download can therefore
+capture a prior spike without manually synchronizing HA and Sync.
 
 Battery charged/discharged and calculated AC PV energy are reported unchanged
 since 16 October 2026, 17:31, despite observed charging and substantial AC PV

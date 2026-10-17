@@ -20,5 +20,9 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
             for key in ("battery_total_charge", "battery_total_discharge")
         },
         "ac_pv_energy_accumulator": coordinator.energy.as_dict(),
+        "power_capture": {
+            "recent_polls": list(coordinator.power_samples),
+            "house_phase_high_bit_polls": list(coordinator.power_high_bit_samples),
+        },
         "ac_pv": "Calculated from internal power and counter balances; compare with Sync",
     }

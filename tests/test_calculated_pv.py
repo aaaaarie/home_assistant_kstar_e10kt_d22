@@ -24,6 +24,7 @@ def set_snapshot(
     grid=(-50, -25, -25),
     dc=(0, 0),
     rejected=None,
+    load_phases=None,
 ):
     words = {
         3066: 500,
@@ -39,6 +40,8 @@ def set_snapshot(
         3024: dc[0],
         3025: dc[1],
     }
+    if load_phases is not None:
+        words.update(zip((3144, 3145, 3146), load_phases, strict=True))
     for address, value in (
         (3152, round(house * 10)),
         (3299, int(charge)),
@@ -236,3 +239,50 @@ async def test_existing_stored_ac_total_survives_upgrade(coordinator, hass, entr
     set_snapshot(restarted.client, charge=0.4, discharge=0)
     await restarted.async_refresh()
     assert restarted.data["ac_pv_energy"] == 0.4
+
+
+async def test_spike_capture_retained_after_normal_polls_without_extra_reads(coordinator):
+    from custom_components.kstar_lan.diagnostics import async_get_config_entry_diagnostics
+
+    set_snapshot(coordinator.client, load_phases=(65535, 65535, 65535))
+    await coordinator.async_refresh()
+    assert coordinator.data["house_power"] == 196605
+    assert coordinator.client.read.await_count == 25
+    captured = coordinator.power_high_bit_samples[0]
+    assert captured["raw_input_registers"]["house_power"] == [65535, 65535, 65535]
+    assert captured["decoded_values"]["grid_s"] == -25
+    assert captured["decoded_values"]["ac_pv_power"] == coordinator.data["ac_pv_power"]
+    assert captured["poll_started_at"] <= captured["poll_completed_at"]
+
+    set_snapshot(coordinator.client, load=1000)
+    for _ in range(7):
+        await coordinator.async_refresh()
+    assert len(coordinator.power_samples) == 5
+    assert len(coordinator.power_high_bit_samples) == 1
+    assert coordinator.power_high_bit_samples[0] == captured
+    assert all(
+        sample["decoded_values"]["house_power"] == 1000 for sample in coordinator.power_samples
+    )
+    assert coordinator.client.read.await_count == 8 * 25
+    coordinator.entry.runtime_data = coordinator
+    diagnostics = await async_get_config_entry_diagnostics(coordinator.hass, coordinator.entry)
+    assert diagnostics["power_capture"]["house_phase_high_bit_polls"] == [captured]
+    assert "192.168" not in str(diagnostics["power_capture"])
+    assert coordinator.entry.unique_id not in str(diagnostics["power_capture"])
+
+
+async def test_spike_history_is_bounded_and_survives_connection_failure(coordinator):
+    for value in range(65520, 65528):
+        set_snapshot(coordinator.client, load=value)
+        await coordinator.async_refresh()
+    assert len(coordinator.power_high_bit_samples) == 5
+    assert [
+        sample["raw_input_registers"]["house_power"][0]
+        for sample in coordinator.power_high_bit_samples
+    ] == list(range(65523, 65528))
+    captured = list(coordinator.power_high_bit_samples)
+    coordinator.client.read.side_effect = CannotConnect()
+    await coordinator.async_refresh()
+    assert not coordinator.last_update_success
+    assert not coordinator.raw
+    assert list(coordinator.power_high_bit_samples) == captured

@@ -39,6 +39,21 @@ removed automatically; historical statistics are not converted. AC PV keeps its
 existing entity ID and accumulated total. “DC PV generated energy” only covers
 panels connected directly to the KSTAR DC inputs.
 
+For the live **Now / current power flow** display, configure the separate power
+inputs in the same Energy settings:
+
+| Power input | Sensor |
+| --- | --- |
+| Solar power | `sensor.kstar_lan_ac_pv_power` |
+| Battery power, standard single-sensor mode | `sensor.kstar_lan_battery_power` |
+| Battery state of charge | `sensor.kstar_lan_battery_soc` |
+
+Battery power is positive when discharging and negative when charging; use
+standard polarity. Grid power comes from the existing P1 sensor. Configuring
+energy counters alone does not connect these power sensors to the live display.
+The historical energy distribution instead uses recorded kWh changes for the
+selected period.
+
 ## Recording during validation
 
 Energy dashboard sources must be recorded. Remove this validation exclusion from
@@ -61,6 +76,11 @@ Removing it does not backfill the excluded period.
 - Unavailable candidates: download integration diagnostics. Rejected registers
   retry after 10 minutes; connection failures retry on subsequent polls.
 - Wrong readings: compare units, sign and scope with Sync; update the overview.
+- House/AC PV power spikes: diagnostics retain the last five power polls and
+  separately the last five polls with a house-phase word's high bit set. Download
+  after a spike, even if readings have returned to normal. Capture includes UTC
+  poll start/end times, raw words and decoded power inputs, without extra reads.
+  History is held in memory and clears on integration reload or HA restart.
 
 ## Development
 

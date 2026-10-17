@@ -1,6 +1,7 @@
 """One connection and polling coordinator per device."""
 
 import logging
+from collections import deque
 from datetime import timedelta
 from time import monotonic
 
@@ -17,6 +18,16 @@ from .modbus import CannotConnect, KstarClient, RegisterUnavailable
 from .registers import INPUT_BY_KEY, SENSORS
 
 _LOGGER = logging.getLogger(__name__)
+_POWER_KEYS = (
+    "house_power",
+    "battery_power",
+    "grid_r",
+    "grid_s",
+    "grid_t",
+    "pv1_power",
+    "pv2_power",
+    "ac_pv_power",
+)
 
 
 class KstarCoordinator(DataUpdateCoordinator[dict[str, int | float | None]]):
@@ -34,6 +45,8 @@ class KstarCoordinator(DataUpdateCoordinator[dict[str, int | float | None]]):
         self.entry = entry
         self.raw: dict[str, list[int]] = {}
         self.errors: dict[str, str] = {}
+        self.power_samples: deque[dict] = deque(maxlen=5)
+        self.power_high_bit_samples: deque[dict] = deque(maxlen=5)
         self._retry_at: dict[tuple[int, int], float] = {}
         self.energy = EnergyBalance()
         self._energy_store = Store(hass, 1, f"{DOMAIN}.{entry.entry_id}.ac_pv_energy")
@@ -49,6 +62,7 @@ class KstarCoordinator(DataUpdateCoordinator[dict[str, int | float | None]]):
         return registry.async_get(entity_id).disabled_by is None
 
     async def _async_update_data(self) -> dict[str, int | float | None]:
+        poll_started_at = dt_util.utcnow().isoformat()
         values: dict[str, int | float | None] = {}
         self.raw = {}
         self.errors = {}
@@ -115,4 +129,23 @@ class KstarCoordinator(DataUpdateCoordinator[dict[str, int | float | None]]):
                 )
                 if self.energy.as_dict() != before:
                     await self._energy_store.async_save(self.energy.as_dict())
+        self._record_power_sample(values, poll_started_at)
         return {s.key: values[s.key] for s in enabled}
+
+    def _record_power_sample(self, values: dict, started_at: str) -> None:
+        if "house_power" not in self.raw:
+            return
+        sample = {
+            "poll_started_at": started_at,
+            "poll_completed_at": dt_util.utcnow().isoformat(),
+            "raw_input_registers": {
+                key: list(self.raw[key]) for key in _POWER_KEYS if key in self.raw
+            },
+            "decoded_values": {key: values[key] for key in _POWER_KEYS if key in values},
+            "errors": {key: self.errors[key] for key in _POWER_KEYS if key in self.errors},
+        }
+        self.power_samples.append(sample)
+        # Retention trigger only: this does not validate U16 versus S16, reject
+        # readings, or change sensor values. Keep evidence after normal polls.
+        if any(word & 0x8000 for word in self.raw["house_power"]):
+            self.power_high_bit_samples.append(sample)
